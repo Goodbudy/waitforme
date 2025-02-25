@@ -1,1 +1,4 @@
 https://chatgpt.com/share/67bd58b5-e7d4-8011-a8ce-f0e61fabaee1
+
+for step 3.2 (git clone git@github.com:your-username/your-repo.git), 
+you have to put this: git clone git@github.com:Goodbudy/waitforme.git
