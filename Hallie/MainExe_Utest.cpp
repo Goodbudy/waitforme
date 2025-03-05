@@ -5,6 +5,8 @@
 #include <std_msgs/String.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <std_msgs/Bool.h>
+#include "TurtleBot.h"  // Include the TurtleBot header
+#include "GoalManager.h"  // Include the GoalManager header (assuming this exists)
 
 // Main function where everything ties together
 int main(int argc, char **argv) {
@@ -35,8 +37,20 @@ int main(int argc, char **argv) {
         // Add goal to the manager
         manager.addGoalToQueue(newGoal, isUrgent);
 
-        // Process goals
+        // Process goals and assign them to available TurtleBots
         manager.assignGoals();
+
+        // Simulate the TurtleBot receiving the goal and moving
+        for (auto &bot : bots) {
+            if (bot.isAtHome()) {
+                bot.receiveGoal(newGoal);  // Assign the new goal to the bot
+            }
+        }
+
+        // Check if any TurtleBots are home and ready for new goals
+        for (auto &bot : bots) {
+            bot.checkIfAtHome();  // Periodically check if the bot is at home
+        }
 
         ros::spinOnce();
         loop_rate.sleep();
