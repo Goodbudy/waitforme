@@ -1,25 +1,31 @@
 <?xml version="1.0"?>
-<package format="3">
+<package format="2">
   <name>issy</name>
   <version>0.0.1</version>
-  <description>A proof-of-concept node to control TurtleBot movement toward an XY goal with obstacle avoidance.</description>
-  <maintainer email="your_email@example.com">Your Name</maintainer>
+  <description>The movement_logic package</description>
+
+  <maintainer email="your-email@domain.com">Your Name</maintainer>
+
   <license>Apache-2.0</license>
 
-  <!-- Build tool -->
+  <!-- Build tool dependencies -->
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <!-- Package dependencies -->
-  <depend>rclcpp</depend>
-  <depend>geometry_msgs</depend>
-  <depend>sensor_msgs</depend>
-  <depend>nav_msgs</depend>
-  <depend>tf2</depend>
-  <depend>tf2_ros</depend>
-  <depend>tf2_geometry_msgs</depend>
+  <!-- Build dependencies -->
+  <build_depend>rclcpp</build_depend>
+  <build_depend>rclcpp_action</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>nav2_msgs</build_depend>
+  <build_depend>std_srvs</build_depend>
+  <build_depend>std_msgs</build_depend>
 
-  <!-- Export information -->
-  <export>
-    <build_type>ament_cmake</build_type>
-  </export>
+  <!-- Execution dependencies -->
+  <exec_depend>rclcpp</exec_depend>
+  <exec_depend>rclcpp_action</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>nav2_msgs</exec_depend>
+  <exec_depend>std_srvs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+
+  <build_export_depend>ament_cmake</build_export_depend>
 </package>
