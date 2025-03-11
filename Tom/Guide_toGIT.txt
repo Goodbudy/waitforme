@@ -1,0 +1,12 @@
+This Package is for explaining how to use Github and push/pull 
+cause i'm an idiot and will forget.
+
+Pulling--
+cd ros2_ws/src/waitforme
+git pull origin main
+
+Pushing--
+cd ros2_ws/src/waitforme
+git add .
+git commit -m "Describe the changes you've made"
+git push origin main
