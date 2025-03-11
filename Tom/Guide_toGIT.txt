@@ -5,8 +5,11 @@ Pulling--
 cd ros2_ws/src/waitforme
 git pull origin main
 
-Pushing--
+Pushing-- Note: make usre you pull before pushing
 cd ros2_ws/src/waitforme
 git add .
 git commit -m "Describe the changes you've made"
 git push origin main
+
+troubleshooting--
+git status
