@@ -13,3 +13,6 @@ git push origin main
 
 troubleshooting--
 git status
+
+other notes:
+can use git pull/push without including origin main. may cause issues.
