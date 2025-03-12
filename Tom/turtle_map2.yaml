@@ -1,4 +1,4 @@
-image: turtle_map.pgm
+image: turtle_map2.pgm
 mode: trinary
 resolution: 0.05
 origin: [-1.25, -2.38, 0]
