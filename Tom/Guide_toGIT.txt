@@ -1,18 +1,26 @@
 This Package is for explaining how to use Github and push/pull 
 cause i'm an idiot and will forget.
 
-Pulling--
+[Pulling]--
 cd ros2_ws/src/waitforme
+git fetch
 git pull origin main
 
-Pushing-- Note: make usre you pull before pushing
+[Pushing]-- Note: make usre you pull before pushing
 cd ros2_ws/src/waitforme
 git add .
 git commit -m "Describe the changes you've made"
 git push origin main
 
-troubleshooting--
-git status
-
 other notes:
 can use git pull/push without including origin main. may cause issues.
+
+[Troubleshooting]--
+git status
+
+ 
+[Colcon building and ignoring packages]--
+sometimes certain packages cause problems.
+When colcon building from ros2_ws can use the suffix: 
+--packages-ignore <package_name>
+eg: colcon build --packages-ignore hallie
