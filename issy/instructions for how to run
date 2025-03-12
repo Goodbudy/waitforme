@@ -1,0 +1,23 @@
+Notes:
+- run all of this in your ros2_ws
+
+Terminal 1:
+- export TURTLEBOT3_MODEL=waffle_pi
+- ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
+
+Terminal 2: 
+- export TURTLEBOT3_MODEL=waffle_pi
+- ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=true
+- Localise the turtlebot in RViz using the 2DPoseEstimate thing, then minimise window
+
+Terminal 3:
+- colcon build --packages-select issy
+- ros2 run issy movementlogic
+
+Terminal 3:
+- Yes in terminal 3
+- To push goals into the queue, write "goal x y", eg. "goal 2.0 0.0"
+- You can push goals into the queue at any time during the movement 
+- To trigger movement to the goals in the list from the home base, write "movenow" 
+- It'll prompt you for the movenow thing
+
