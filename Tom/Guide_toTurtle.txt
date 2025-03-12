@@ -66,5 +66,44 @@ looks for:
 /camera/image_raw
 /gazebo/camera/image_raw
 
+-note: other topics and data points can be visualised with rviz.
+just need to subscribe to the correct topic
 
+[SLAM and yaml Files]--
+To make the robot actually be able to move in its environment with nav stuff
+it is required to create a .yaml file for it to use.
+to do so first run world in gazebo + run teleop.
+Then in new terminal export and run following command:
+ros2 launch turtlebot3_cartographer cartographer.launch.py use_sim_time:=True
 
+This will open rviz. then teleop until entire map is explored.
+after map is explored in new terminal use following commands to save map:
+cd <desired_directory>
+ros2 run nav2_map_server map_saver_cli -f <map_name>
+eg: ros2 run nav2_map_server map_saver_cli -f turtle_map
+-note: this will save the map in whatever directory you are currently in.
+
+alternatively can use the slightly different command:
+ros2 run nav2_map_server map_saver_cli -f ~/<desired_directory>/<map_name>
+eg: ros2 run nav2_map_server map_saver_cli -f ~/ros2_ws/src/turtle_map
+-note: this will save it as turtlemap in the src
+
+[Navigation with Ros2]--
+it is possible to navigate around a map using the Ros2 navigation topics.
+once the gazebo is running open and export in a new terminal before running the following line:
+ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True
+-note: this will run the default turtlebot world. 
+
+for custom worlds there are two main methods of running the correct navigation file:
+Method 1 - run with directory and map name.
+ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=$HOME/<desired_directory>/<map_name.yaml>
+eg: ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=$HOME/ros2_ws/src/waitforme/Tom/turtle_map.yaml
+
+Method 2 - run from desired directory
+cd <desired_directory>
+ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=./<map_name.yaml>
+eg: ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=./turtle_map.yaml
+
+in either case once the rvix has loaded using the above commands then you can use the two buttons
+2d pose estimate - used to localise initially
+navigation2 goal - helps localise and provides a goal for the robot, which it will move towards.
