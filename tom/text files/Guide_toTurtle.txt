@@ -80,12 +80,12 @@ This will open rviz. then teleop until entire map is explored.
 after map is explored in new terminal use following commands to save map:
 cd <desired_directory>
 ros2 run nav2_map_server map_saver_cli -f <map_name>
-eg: ros2 run nav2_map_server map_saver_cli -f turtle_map
+eg: ros2 run nav2_map_server map_saver_cli -f turtle_map2
 -note: this will save the map in whatever directory you are currently in.
 
 alternatively can use the slightly different command:
 ros2 run nav2_map_server map_saver_cli -f ~/<desired_directory>/<map_name>
-eg: ros2 run nav2_map_server map_saver_cli -f ~/ros2_ws/src/turtle_map
+eg: ros2 run nav2_map_server map_saver_cli -f ~/ros2_ws/src/turtle_map2
 -note: this will save it as turtlemap in the src
 
 [Navigation with Ros2]--
@@ -97,12 +97,12 @@ ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True
 for custom worlds there are two main methods of running the correct navigation file:
 Method 1 - run with directory and map name.
 ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=$HOME/<desired_directory>/<map_name.yaml>
-eg: ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=$HOME/ros2_ws/src/waitforme/Tom/turtle_map.yaml
+eg: ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=$HOME/ros2_ws/src/waitforme/Tom/turtle_map2.yaml
 
 Method 2 - run from desired directory
 cd <desired_directory>
 ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=./<map_name.yaml>
-eg: ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=./turtle_map.yaml
+eg: ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=./turtle_map2.yaml
 
 in either case once the rvix has loaded using the above commands then you can use the two buttons
 2d pose estimate - used to localise initially

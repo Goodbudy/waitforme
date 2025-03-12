@@ -24,3 +24,8 @@ sometimes certain packages cause problems.
 When colcon building from ros2_ws can use the suffix: 
 --packages-ignore <package_name>
 eg: colcon build --packages-ignore hallie
+
+[Colcon building only certain packages]--
+When colcon building from ros2_ws can use the suffix: 
+--packages-select <package_name>
+eg: colcon build --packages-select Tom

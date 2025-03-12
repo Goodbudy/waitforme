@@ -1,0 +1,4 @@
+source;share/Tom/local_setup.bash
+source;share/Tom/local_setup.dsv
+source;share/Tom/local_setup.sh
+source;share/Tom/local_setup.zsh
