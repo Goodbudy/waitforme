@@ -1,4 +1,3 @@
-
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "std_msgs/msg/string.hpp"
@@ -19,11 +18,20 @@ public:
     MovementLogic() : Node("movementlogic"), x_home(-2.0), y_home(0.0), tolerance(0.2), executing_goal(false) {
         client_ = rclcpp_action::create_client<NavigateToPose>(this, "navigate_to_pose");
 
+        // Wait for the action server to become available
+        while (!client_->wait_for_action_server(std::chrono::seconds(1))) {
+            RCLCPP_INFO(this->get_logger(), "Waiting for action server...");
+        }
+
         // Subscribe to Odometry Data
         odom_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
             "/odom", 10, std::bind(&MovementLogic::odom_callback, this, std::placeholders::_1));
 
-        RCLCPP_INFO(this->get_logger(), "Waiting for user input...");
+        // Initiate movement to home base as soon as the node starts
+        RCLCPP_INFO(this->get_logger(), "Navigating to home base...");
+        navigate_to_home_base();
+
+        // Start listening for input (goal commands or "movenow" command)
         std::thread(&MovementLogic::listen_for_input, this).detach();
     }
 
@@ -35,6 +43,7 @@ private:
     double current_x = 0.0, current_y = 0.0;
     std::queue<std::pair<double, double>> goal_queue;
     bool executing_goal;
+    bool home_base_reached = false;
 
     void listen_for_input() {
         while (rclcpp::ok()) {
@@ -47,7 +56,7 @@ private:
                 goal_queue.push({x, y});
                 RCLCPP_INFO(this->get_logger(), "Added goal: x=%.2f, y=%.2f", x, y);
             }
-            else if (input == "movenow" && !executing_goal) {
+            else if (input == "movenow" && !executing_goal && home_base_reached) {
                 executing_goal = true;
                 execute_next_goal();
             }
@@ -59,23 +68,16 @@ private:
             auto [x_goal, y_goal] = goal_queue.front();
             goal_queue.pop();
             navigate_to(x_goal, y_goal, [this]() {
-                RCLCPP_INFO(this->get_logger(), "Arrived at goal! Starting 15s countdown...");
-                for (int i = 15; i > 0; --i) {
+                RCLCPP_INFO(this->get_logger(), "Arrived at goal! Starting 5s countdown...");
+                for (int i = 5; i > 0; --i) {
                     RCLCPP_INFO(this->get_logger(), "Waiting... %d seconds left", i);
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
                 RCLCPP_INFO(this->get_logger(), "Countdown complete! Returning to home base...");
-                navigate_to(x_home, y_home, [this]() {
-                    RCLCPP_INFO(this->get_logger(), "Returned to home base.");
-                    print_remaining_goals();
-                    executing_goal = false;
-                    if (!goal_queue.empty()) {
-                        execute_next_goal(); // Automatically continue to the next goal
-                    }
-                });
+                navigate_to_home_base();
             });
         } else {
-            RCLCPP_INFO(this->get_logger(), "No destination.");
+            RCLCPP_INFO(this->get_logger(), "No goals in the queue.");
             executing_goal = false;
         }
     }
@@ -91,12 +93,21 @@ private:
         auto send_goal_options = rclcpp_action::Client<NavigateToPose>::SendGoalOptions();
         send_goal_options.result_callback = [this, on_success](const GoalHandleNav::WrappedResult & result) {
             if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
-                RCLCPP_INFO(this->get_logger(), "Navigation successful! Position: x=%.2f, y=%.2f", current_x, current_y);
+                RCLCPP_INFO(this->get_logger(), "Navigation successful!");
                 on_success();
             }
         };
 
         client_->async_send_goal(goal_msg, send_goal_options);
+    }
+
+    void navigate_to_home_base() {
+        navigate_to(x_home, y_home, [this]() {
+            RCLCPP_INFO(this->get_logger(), "Returned to home base.");
+            home_base_reached = true; // Mark home base as reached
+            executing_goal = false;
+            print_remaining_goals();
+        });
     }
 
     void odom_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
