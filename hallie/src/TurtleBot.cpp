@@ -1,7 +1,7 @@
-#include <ros/ros.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <std_msgs/String.h>
-#include <std_msgs/Bool.h>
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/string.hpp>
+#include <geometry_msgs/msg/pose.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <iostream>
 
 class TurtleBot {

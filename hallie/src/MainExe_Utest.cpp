@@ -1,10 +1,10 @@
 #include <iostream>
 #include <vector>
 #include <queue>
-#include <ros/ros.h>
-#include <std_msgs/String.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <std_msgs/Bool.h>
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/string.hpp>
+#include <geometry_msgs/msg/pose.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include "TurtleBot.h"  // Include the TurtleBot header
 #include "GoalManager.h"  // Include the GoalManager header (assuming this exists)
 
