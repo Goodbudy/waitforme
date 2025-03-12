@@ -10,6 +10,7 @@ public:
     }
 
 private:
+//this sets the current coords to be 0,0 if robot is elsewhere this will not work.
     void set_initial_pose() {
         auto msg = geometry_msgs::msg::PoseWithCovarianceStamped();
         msg.header.stamp = this->get_clock()->now();
@@ -25,7 +26,8 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
 };
 
-// **MAIN FUNCTION MUST EXIST**
+
+
 int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<AutoLocalize>();
