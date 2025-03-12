@@ -1,8 +1,10 @@
 #ifndef TURTLEBOT_H
 #define TURTLEBOT_H
 
-#include <ros/ros.h>
-#include <geometry_msgs/PoseStamped.h>
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/string.hpp>
+#include <geometry_msgs/msg/pose.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <iostream>
 
 class TurtleBot {

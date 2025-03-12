@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>waitforme</name>
+  <version>0.0.1</version>
+  <description>The waitforme package</description>
+
+  <maintainer email="your-email@domain.com">Your Name</maintainer>
+  <license>TODO</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>rclcpp</exec_depend>
+
+</package>
