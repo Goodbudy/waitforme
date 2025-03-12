@@ -2,42 +2,37 @@
 #define GOAL_MANAGER_H
 
 #include <vector>
-#include <queue>
+#include <deque>
+#include <unordered_map>
+#include <string>
 #include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/string.hpp>
 #include <geometry_msgs/msg/pose.hpp>
 #include <std_msgs/msg/bool.hpp>
-#include "TurtleBot.h"  // Assuming you have a separate TurtleBot class header
 
-class GoalManager {
-private:
-    std::vector<TurtleBot> turtleBots;  // List of available TurtleBots
-    std::deque<geometry_msgs::PoseStamped> goalQueue;  // Queue for normal goals
-    std::deque<geometry_msgs::PoseStamped> urgentGoalQueue;  // Queue for urgent goals
-    ros::Publisher barRobotPub;  // Publisher for bar robot status
-    ros::Subscriber botStatusSub;  // Subscriber for TurtleBot status updates
-
-public:
-    // Constructor for GoalManager class
-    GoalManager(std::vector<TurtleBot> &bots, ros::NodeHandle &nh);
-
-    // Method to add a goal to the queue
-    void addGoalToQueue(const geometry_msgs::PoseStamped &goal, bool isUrgent = false);
-
-    // Method to handle updates on TurtleBot status (whether they are home or not)
-    void updateBotStatus(const std_msgs::Bool::ConstPtr& msg);
-
-    // Method to assign goals to available TurtleBots
-    void assignGoals();
-
-    // Method to assign a goal to an available TurtleBot
-    void assignGoalToAvailableBot(const geometry_msgs::PoseStamped &goal);
-
-    // Method to publish the status of the bar robot (e.g., when the drink is ready to be deposited)
-    void publishBarRobotStatus(const std::string &status);
-
-    // Method to inform the TurtleBot that the drink has been deposited
-    void informTurtleBotDrinkDeposited();
+struct BotStatus {
+    bool at_home;
+    bool delivering;
+    bool in_proximity;
 };
 
-#endif // GOAL_MANAGER_H
+class GoalManager : public rclcpp::Node {
+public:
+    GoalManager();
+
+private:
+    std::unordered_map<std::string, BotStatus> bot_status_map_;
+    std::vector<std::string> priority_order_;
+
+    rclcpp::TimerBase::SharedPtr timer_;
+
+    void update_priority_order();
+    void create_status_subscribers(const std::vector<std::string> &bot_names);
+
+    std::unordered_map<std::string, rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr> at_home_subs_;
+    std::unordered_map<std::string, rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr> delivering_subs_;
+    std::unordered_map<std::string, rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr> proximity_subs_;
+
+    void status_callback(const std_msgs::msg::Bool::SharedPtr msg, const std::string &bot_id, const std::string &type);
+};
+
+#endif

@@ -1,60 +1,48 @@
-#include <iostream>
-#include <vector>
-#include <queue>
 #include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/string.hpp>
-#include <geometry_msgs/msg/pose.hpp>
-#include <std_msgs/msg/bool.hpp>
-#include "TurtleBot.h"  // Include the TurtleBot header
-#include "GoalManager.h"  // Include the GoalManager header (assuming this exists)
+#include "TurtleBot.h"
+#include "GoalManager.h"
 
-// Main function where everything ties together
 int main(int argc, char **argv) {
-    ros::init(argc, argv, "goal_manager_node");
-    ros::NodeHandle nh;
+    rclcpp::init(argc, argv);
 
-    // Create and initialize TurtleBots
-    std::vector<TurtleBot> bots = {TurtleBot("TurtleBot_1"), TurtleBot("TurtleBot_2")};
+    auto node1 = std::make_shared<rclcpp::Node>("bot1_node");
+    auto node2 = std::make_shared<rclcpp::Node>("bot2_node");
+    auto node3 = std::make_shared<rclcpp::Node>("bot3_node");
 
-    // Initialize GoalManager with ROS NodeHandle
-    GoalManager manager(bots, nh);
+    TurtleBot bot1("bot1", node1);
+    TurtleBot bot2("bot2", node2);
+    TurtleBot bot3("bot3", node3);
 
-    // Simulate an external process that sends orders/goals (simulating a host or system)
-    ros::Rate loop_rate(1);  // 1 Hz loop rate, simulate new orders coming in every second
+    auto goal_manager = std::make_shared<GoalManager>();
 
-    while (ros::ok()) {
-        // In a real scenario, these would be data from external sources, like a service or topic
-        geometry_msgs::PoseStamped newGoal;
-        newGoal.pose.position.x = rand() % 10;  // Random x position for the goal
-        newGoal.pose.position.y = rand() % 10;  // Random y position for the goal
-        newGoal.pose.position.z = 0.0;
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(node1);
+    executor.add_node(node2);
+    executor.add_node(node3);
+    executor.add_node(goal_manager);
 
-        // Simulate the type of goal (normal or urgent)
-        bool isUrgent = (rand() % 2 == 0);  // Randomly determine if the goal is urgent or not
+    // Simulate status updates (in real case these would be dynamic)
+    rclcpp::Rate rate(1.0);
+    while (rclcpp::ok()) {
+        bot1.setAtHome(true);
+        bot1.setDelivering(true);
+        bot1.setInProximity(true);
+        bot1.publishStatus();
 
-        ROS_INFO("New goal received: [%f, %f] (Urgent: %s)", newGoal.pose.position.x, newGoal.pose.position.y, isUrgent ? "Yes" : "No");
+        bot2.setAtHome(false);
+        bot2.setDelivering(true);
+        bot2.setInProximity(true);
+        bot2.publishStatus();
 
-        // Add goal to the manager
-        manager.addGoalToQueue(newGoal, isUrgent);
+        bot3.setAtHome(false);
+        bot3.setDelivering(false);
+        bot3.setInProximity(false);
+        bot3.publishStatus();
 
-        // Process goals and assign them to available TurtleBots
-        manager.assignGoals();
-
-        // Simulate the TurtleBot receiving the goal and moving
-        for (auto &bot : bots) {
-            if (bot.isAtHome()) {
-                bot.receiveGoal(newGoal);  // Assign the new goal to the bot
-            }
-        }
-
-        // Check if any TurtleBots are home and ready for new goals
-        for (auto &bot : bots) {
-            bot.checkIfAtHome();  // Periodically check if the bot is at home
-        }
-
-        ros::spinOnce();
-        loop_rate.sleep();
+        executor.spin_once();
+        rate.sleep();
     }
 
+    rclcpp::shutdown();
     return 0;
 }
