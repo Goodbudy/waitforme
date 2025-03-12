@@ -1,72 +1,38 @@
-#include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/string.hpp>
-#include <geometry_msgs/msg/pose.hpp>
-#include <std_msgs/msg/bool.hpp>
-#include <iostream>
+#include "TurtleBot.h"
 
-class TurtleBot {
-public:
-    std::string bot_name;
-    bool is_home;
-    geometry_msgs::PoseStamped current_position;
+TurtleBot::TurtleBot(std::string name, std::shared_ptr<rclcpp::Node> node)
+: bot_name(name), node_(node), is_home_(false), delivering_drink_(false), in_proximity_(false)
+{
+    at_home_pub_ = node_->create_publisher<std_msgs::msg::Bool>("/" + bot_name + "/at_home", 10);
+    delivering_pub_ = node_->create_publisher<std_msgs::msg::Bool>("/" + bot_name + "/delivering", 10);
+    proximity_pub_ = node_->create_publisher<std_msgs::msg::Bool>("/" + bot_name + "/in_proximity", 10);
+}
 
-    TurtleBot(std::string name) : bot_name(name), is_home(false) {}
+void TurtleBot::publishStatus() {
+    std_msgs::msg::Bool msg;
 
-    // Simulate receiving a goal
-    void receiveGoal(const geometry_msgs::PoseStamped &goal) {
-        // Print confirmation that the goal has been received
-        std::cout << bot_name << " received goal: [" 
-                  << goal.pose.position.x << ", " 
-                  << goal.pose.position.y << "]" << std::endl;
-        
-        // Simulate moving to the goal
-        moveToGoal(goal);
-    }
+    msg.data = is_home_;
+    at_home_pub_->publish(msg);
 
-    // Simulate moving the robot to the goal
-    void moveToGoal(const geometry_msgs::PoseStamped &goal) {
-        // Simulate movement logic
-        std::cout << bot_name << " is moving to goal: [" 
-                  << goal.pose.position.x << ", " 
-                  << goal.pose.position.y << "]" << std::endl;
+    msg.data = delivering_drink_;
+    delivering_pub_->publish(msg);
 
-        // Update the position
-        current_position = goal;
+    msg.data = in_proximity_;
+    proximity_pub_->publish(msg);
+}
 
-        // Simulate that bot is not at home while moving
-        is_home = false;
+void TurtleBot::setAtHome(bool status) {
+    is_home_ = status;
+}
 
-        // After reaching the goal, print confirmation and update is_home flag
-        std::cout << bot_name << " has reached goal at [" 
-                  << current_position.pose.position.x << ", " 
-                  << current_position.pose.position.y << "]" << std::endl;
+void TurtleBot::setDelivering(bool status) {
+    delivering_drink_ = status;
+}
 
-        // Simulate the bot returning home
-        returnToHome();
-    }
+void TurtleBot::setInProximity(bool status) {
+    in_proximity_ = status;
+}
 
-    // Simulate returning the robot to home base
-    void returnToHome() {
-        std::cout << bot_name << " is returning home." << std::endl;
-
-        // Simulate that bot is not home while returning
-        is_home = false;
-
-        // Assuming the bot has returned to home within a tolerance, set it to home
-        std::cout << bot_name << " has returned to home within tolerance." << std::endl;
-        is_home = true;
-    }
-
-    bool isAtHome() {
-        return is_home;
-    }
-
-    // Simulate periodic checks for whether the bot is at home or not
-    void checkIfAtHome() {
-        if (is_home) {
-            std::cout << bot_name << " is at home and ready for a new task." << std::endl;
-        } else {
-            std::cout << bot_name << " is not at home yet." << std::endl;
-        }
-    }
-};
+std::string TurtleBot::getName() const {
+    return bot_name;
+}
