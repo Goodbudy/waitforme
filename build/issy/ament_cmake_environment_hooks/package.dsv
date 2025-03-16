@@ -1,0 +1,4 @@
+source;share/issy/local_setup.bash
+source;share/issy/local_setup.dsv
+source;share/issy/local_setup.sh
+source;share/issy/local_setup.zsh

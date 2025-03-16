@@ -1,0 +1,22 @@
+[35m[1mConsolidate compiler generated dependencies of target movementlogic[0m
+[ 50%] [32mBuilding CXX object CMakeFiles/movementlogic.dir/src/movementlogic.cpp.o[0m
+[100%] [32m[1mLinking CXX executable movementlogic[0m
+[100%] Built target movementlogic
+-- Install configuration: ""
+-- Execute custom install script
+-- Up-to-date symlink: /home/issy/ros2_ws/src/waitforme/install/issy/lib/issy/movementlogic
+-- Up-to-date symlink: /home/issy/ros2_ws/src/waitforme/install/issy/share/ament_index/resource_index/package_run_dependencies/issy
+-- Up-to-date symlink: /home/issy/ros2_ws/src/waitforme/install/issy/share/ament_index/resource_index/parent_prefix_path/issy
+-- Up-to-date symlink: /home/issy/ros2_ws/src/waitforme/install/issy/share/issy/environment/ament_prefix_path.sh
+-- Up-to-date symlink: /home/issy/ros2_ws/src/waitforme/install/issy/share/issy/environment/ament_prefix_path.dsv
+-- Up-to-date symlink: /home/issy/ros2_ws/src/waitforme/install/issy/share/issy/environment/path.sh
+-- Up-to-date symlink: /home/issy/ros2_ws/src/waitforme/install/issy/share/issy/environment/path.dsv
+-- Up-to-date symlink: /home/issy/ros2_ws/src/waitforme/install/issy/share/issy/local_setup.bash
+-- Up-to-date symlink: /home/issy/ros2_ws/src/waitforme/install/issy/share/issy/local_setup.sh
+-- Up-to-date symlink: /home/issy/ros2_ws/src/waitforme/install/issy/share/issy/local_setup.zsh
+-- Up-to-date symlink: /home/issy/ros2_ws/src/waitforme/install/issy/share/issy/local_setup.dsv
+-- Symlinking: /home/issy/ros2_ws/src/waitforme/install/issy/share/issy/package.dsv
+-- Up-to-date symlink: /home/issy/ros2_ws/src/waitforme/install/issy/share/ament_index/resource_index/packages/issy
+-- Up-to-date symlink: /home/issy/ros2_ws/src/waitforme/install/issy/share/issy/cmake/issyConfig.cmake
+-- Up-to-date symlink: /home/issy/ros2_ws/src/waitforme/install/issy/share/issy/cmake/issyConfig-version.cmake
+-- Up-to-date symlink: /home/issy/ros2_ws/src/waitforme/install/issy/share/issy/package.xml

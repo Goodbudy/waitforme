@@ -1,0 +1,8 @@
+source;share/issy/hook/cmake_prefix_path.ps1
+source;share/issy/hook/cmake_prefix_path.dsv
+source;share/issy/hook/cmake_prefix_path.sh
+source;share/issy/local_setup.bash
+source;share/issy/local_setup.dsv
+source;share/issy/local_setup.ps1
+source;share/issy/local_setup.sh
+source;share/issy/local_setup.zsh

@@ -1,0 +1,9 @@
+it's not that i have alzheimers but i will forget what i'm meant to be doing
+
+Step 1: get all turtlebot and map stuff working 
+Step 2: make some code so that when i launch turtlebot it will automagically localise.
+Step 3: give it some intelligence so it can figure out what is what (use opencv feature recognition)
+Step 4: get it to figure out where the other turtlebot is and how it's moving (more coding)
+Step 5: Can use libraries but to use deep learning to predict what objects are. use SVM. https://scikit-learn.org/stable/modules/svm.html
+this will be a neural network, which i have fed data so it can hopefully recognise differnet objects
+
