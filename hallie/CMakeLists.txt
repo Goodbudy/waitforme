@@ -15,12 +15,14 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(nav2_msgs REQUIRED)
+find_package(rclcpp_action REQUIRED)
 
 # Add your executable (replace with your actual source files)
 add_executable(MainExe_Utest src/MainExe_Utest.cpp src/TurtleBot.cpp src/GoalManager.cpp)
 
 # Link dependencies to your executable
-ament_target_dependencies(MainExe_Utest rclcpp std_msgs geometry_msgs nav_msgs)
+ament_target_dependencies(MainExe_Utest rclcpp std_msgs geometry_msgs nav_msgs nav2_msgs rclcpp_action)
 
 # Install the executable
 install(TARGETS MainExe_Utest DESTINATION lib/${PROJECT_NAME})
