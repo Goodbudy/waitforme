@@ -63,7 +63,7 @@ CMAKE_BINARY_DIR = /home/andrew/ros2_ws/src/waitforme/andy/build
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: CMakeFiles/mapping.dir/all
+all: CMakeFiles/path_planner.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -73,7 +73,7 @@ preinstall:
 # The main recursive "clean" target.
 clean: CMakeFiles/uninstall.dir/clean
 clean: CMakeFiles/andy_uninstall.dir/clean
-clean: CMakeFiles/mapping.dir/clean
+clean: CMakeFiles/path_planner.dir/clean
 .PHONY : clean
 
 #=============================================================================
@@ -129,30 +129,30 @@ CMakeFiles/andy_uninstall.dir/clean:
 .PHONY : CMakeFiles/andy_uninstall.dir/clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/mapping.dir
+# Target rules for target CMakeFiles/path_planner.dir
 
 # All Build rule for target.
-CMakeFiles/mapping.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mapping.dir/build.make CMakeFiles/mapping.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mapping.dir/build.make CMakeFiles/mapping.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/andrew/ros2_ws/src/waitforme/andy/build/CMakeFiles --progress-num=1,2 "Built target mapping"
-.PHONY : CMakeFiles/mapping.dir/all
+CMakeFiles/path_planner.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/path_planner.dir/build.make CMakeFiles/path_planner.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/path_planner.dir/build.make CMakeFiles/path_planner.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/andrew/ros2_ws/src/waitforme/andy/build/CMakeFiles --progress-num=1,2 "Built target path_planner"
+.PHONY : CMakeFiles/path_planner.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/mapping.dir/rule: cmake_check_build_system
+CMakeFiles/path_planner.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/andrew/ros2_ws/src/waitforme/andy/build/CMakeFiles 2
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/mapping.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/path_planner.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/andrew/ros2_ws/src/waitforme/andy/build/CMakeFiles 0
-.PHONY : CMakeFiles/mapping.dir/rule
+.PHONY : CMakeFiles/path_planner.dir/rule
 
 # Convenience name for target.
-mapping: CMakeFiles/mapping.dir/rule
-.PHONY : mapping
+path_planner: CMakeFiles/path_planner.dir/rule
+.PHONY : path_planner
 
 # clean rule for target.
-CMakeFiles/mapping.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mapping.dir/build.make CMakeFiles/mapping.dir/clean
-.PHONY : CMakeFiles/mapping.dir/clean
+CMakeFiles/path_planner.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/path_planner.dir/build.make CMakeFiles/path_planner.dir/clean
+.PHONY : CMakeFiles/path_planner.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

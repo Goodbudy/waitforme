@@ -1435,7 +1435,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "AndyG"
+			"value" : "andrew-HP-ProBook-450-15-6-inch-G10-Notebook-PC"
 		},
 		{
 			"name" : "TinyXML2_DIR",
@@ -1939,7 +1939,19 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "/opt/ros/humble/lib/librosgraph_msgs__rosidl_typesupport_fastrtps_cpp.so"
+			"value" : "/opt/ros/humble/lib/libnav2_msgs__rosidl_typesupport_fastrtps_cpp.so"
+		},
+		{
+			"name" : "action_msgs_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for action_msgs."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/action_msgs/cmake"
 		},
 		{
 			"name" : "ament_cmake_DIR",
@@ -2398,6 +2410,18 @@
 			"value" : "/opt/ros/humble/lib/foonathan_memory/cmake"
 		},
 		{
+			"name" : "geometry_msgs_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for geometry_msgs."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/geometry_msgs/cmake"
+		},
+		{
 			"name" : "libstatistics_collector_DIR",
 			"properties" : 
 			[
@@ -2422,40 +2446,28 @@
 			"value" : "/opt/ros/humble/share/libyaml_vendor/cmake"
 		},
 		{
-			"name" : "mapping_BINARY_DIR",
+			"name" : "nav2_msgs_DIR",
 			"properties" : 
 			[
 				{
 					"name" : "HELPSTRING",
-					"value" : "Value Computed by CMake"
+					"value" : "The directory containing a CMake configuration file for nav2_msgs."
 				}
 			],
-			"type" : "STATIC",
-			"value" : "/home/andrew/ros2_ws/src/waitforme/andy/build"
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/nav2_msgs/cmake"
 		},
 		{
-			"name" : "mapping_IS_TOP_LEVEL",
+			"name" : "nav_msgs_DIR",
 			"properties" : 
 			[
 				{
 					"name" : "HELPSTRING",
-					"value" : "Value Computed by CMake"
+					"value" : "The directory containing a CMake configuration file for nav_msgs."
 				}
 			],
-			"type" : "STATIC",
-			"value" : "ON"
-		},
-		{
-			"name" : "mapping_SOURCE_DIR",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "Value Computed by CMake"
-				}
-			],
-			"type" : "STATIC",
-			"value" : "/home/andrew/ros2_ws/src/waitforme/andy"
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/nav_msgs/cmake"
 		},
 		{
 			"name" : "pkgcfg_lib__OPENSSL_crypto",
@@ -2512,6 +2524,18 @@
 			],
 			"type" : "PATH",
 			"value" : "/opt/ros/humble/share/rcl/cmake"
+		},
+		{
+			"name" : "rcl_action_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for rcl_action."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/rcl_action/cmake"
 		},
 		{
 			"name" : "rcl_interfaces_DIR",
@@ -2572,6 +2596,18 @@
 			],
 			"type" : "PATH",
 			"value" : "/opt/ros/humble/share/rclcpp/cmake"
+		},
+		{
+			"name" : "rclcpp_action_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for rclcpp_action."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/rclcpp_action/cmake"
 		},
 		{
 			"name" : "rcpputils_DIR",
@@ -2908,6 +2944,18 @@
 			],
 			"type" : "PATH",
 			"value" : "/opt/ros/humble/share/tracetools/cmake"
+		},
+		{
+			"name" : "unique_identifier_msgs_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for unique_identifier_msgs."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/opt/ros/humble/share/unique_identifier_msgs/cmake"
 		},
 		{
 			"name" : "xmllint_BIN",

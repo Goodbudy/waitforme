@@ -7,15 +7,18 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp_action REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(nav2_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
-# ass executables
-add_executable(mapping src/mapping.cpp)
-ament_target_dependencies(mapping rclcpp)
+# add executables
+add_executable(path_planner src/path_planner.cpp)
+ament_target_dependencies(path_planner rclcpp rclcpp_action nav2_msgs geometry_msgs)
 
 # Install the executable
 install(TARGETS
-  mapping
+  path_planner
   DESTINATION lib/${PROJECT_NAME}
 )
 
