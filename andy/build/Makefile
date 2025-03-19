@@ -198,41 +198,41 @@ andy_uninstall/fast:
 .PHONY : andy_uninstall/fast
 
 #=============================================================================
-# Target rules for targets named mapping
+# Target rules for targets named path_planner
 
 # Build rule for target.
-mapping: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 mapping
-.PHONY : mapping
+path_planner: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 path_planner
+.PHONY : path_planner
 
 # fast build rule for target.
-mapping/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mapping.dir/build.make CMakeFiles/mapping.dir/build
-.PHONY : mapping/fast
+path_planner/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/path_planner.dir/build.make CMakeFiles/path_planner.dir/build
+.PHONY : path_planner/fast
 
-src/mapping.o: src/mapping.cpp.o
-.PHONY : src/mapping.o
+src/path_planner.o: src/path_planner.cpp.o
+.PHONY : src/path_planner.o
 
 # target to build an object file
-src/mapping.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mapping.dir/build.make CMakeFiles/mapping.dir/src/mapping.cpp.o
-.PHONY : src/mapping.cpp.o
+src/path_planner.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/path_planner.dir/build.make CMakeFiles/path_planner.dir/src/path_planner.cpp.o
+.PHONY : src/path_planner.cpp.o
 
-src/mapping.i: src/mapping.cpp.i
-.PHONY : src/mapping.i
+src/path_planner.i: src/path_planner.cpp.i
+.PHONY : src/path_planner.i
 
 # target to preprocess a source file
-src/mapping.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mapping.dir/build.make CMakeFiles/mapping.dir/src/mapping.cpp.i
-.PHONY : src/mapping.cpp.i
+src/path_planner.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/path_planner.dir/build.make CMakeFiles/path_planner.dir/src/path_planner.cpp.i
+.PHONY : src/path_planner.cpp.i
 
-src/mapping.s: src/mapping.cpp.s
-.PHONY : src/mapping.s
+src/path_planner.s: src/path_planner.cpp.s
+.PHONY : src/path_planner.s
 
 # target to generate assembly for a file
-src/mapping.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/mapping.dir/build.make CMakeFiles/mapping.dir/src/mapping.cpp.s
-.PHONY : src/mapping.cpp.s
+src/path_planner.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/path_planner.dir/build.make CMakeFiles/path_planner.dir/src/path_planner.cpp.s
+.PHONY : src/path_planner.cpp.s
 
 # Help Target
 help:
@@ -249,10 +249,10 @@ help:
 	@echo "... test"
 	@echo "... andy_uninstall"
 	@echo "... uninstall"
-	@echo "... mapping"
-	@echo "... src/mapping.o"
-	@echo "... src/mapping.i"
-	@echo "... src/mapping.s"
+	@echo "... path_planner"
+	@echo "... src/path_planner.o"
+	@echo "... src/path_planner.i"
+	@echo "... src/path_planner.s"
 .PHONY : help
 
 

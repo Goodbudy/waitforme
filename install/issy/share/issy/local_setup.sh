@@ -1,1 +1,0 @@
-/home/issy/ros2_ws/src/waitforme/build/issy/ament_cmake_environment_hooks/local_setup.sh
