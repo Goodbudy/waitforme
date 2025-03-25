@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Site BuildName="(empty)"
 	BuildStamp="20250325-0338-Experimental"
-	Name="andrew-HP-ProBook-450-15-6-inch-G10-Notebook-PC"
+	Name="AndyG"
 	Generator="ctest-3.22.1"
 	CompilerName="/usr/bin/c++"
 	CompilerVersion="11.4.0"
 	OSName="Linux"
-	Hostname="andrew-HP-ProBook-450-15-6-inch-G10-Notebook-PC"
-	OSRelease="6.8.0-52-generic"
-	OSVersion="#53~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Wed Jan 15 19:18:46 UTC 2"
+	Hostname="AndyG"
+	OSRelease="5.15.133.1-microsoft-standard-WSL2"
+	OSVersion="#1 SMP Thu Oct 5 21:02:42 UTC 2023"
 	OSPlatform="x86_64"
 	Is64Bits="1"
 	VendorString="GenuineIntel"
@@ -17,18 +17,18 @@
 	ModelID="186"
 	ProcessorCacheSize="12288"
 	NumberOfLogicalCPU="12"
-	NumberOfPhysicalCPU="10"
-	TotalVirtualMemory="2047"
-	TotalPhysicalMemory="15627"
-	LogicalProcessorsPerPhysical="1"
-	ProcessorClockFrequency="3535.41"
+	NumberOfPhysicalCPU="6"
+	TotalVirtualMemory="2048"
+	TotalPhysicalMemory="7763"
+	LogicalProcessorsPerPhysical="2"
+	ProcessorClockFrequency="2496.01"
 	>
 	<Testing>
-		<StartDateTime>Mar 25 16:10 AEDT</StartDateTime>
-		<StartTestTime>1742879405</StartTestTime>
+		<StartDateTime>Mar 26 09:10 AEDT</StartDateTime>
+		<StartTestTime>1742940615</StartTestTime>
 		<TestList/>
-		<EndDateTime>Mar 25 16:10 AEDT</EndDateTime>
-		<EndTestTime>1742879405</EndTestTime>
+		<EndDateTime>Mar 26 09:10 AEDT</EndDateTime>
+		<EndTestTime>1742940615</EndTestTime>
 		<ElapsedMinutes>0</ElapsedMinutes>
 	</Testing>
 </Site>

@@ -1426,6 +1426,18 @@
 			"value" : "/usr/bin/python3"
 		},
 		{
+			"name" : "RMW_IMPLEMENTATION",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "Select ROS middleware implementation to link against"
+				}
+			],
+			"type" : "STRING",
+			"value" : "rmw_fastrtps_cpp"
+		},
+		{
 			"name" : "SITE",
 			"properties" : 
 			[
@@ -1435,7 +1447,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "andrew-HP-ProBook-450-15-6-inch-G10-Notebook-PC"
+			"value" : "AndyG"
 		},
 		{
 			"name" : "TinyXML2_DIR",
