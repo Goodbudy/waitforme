@@ -1,0 +1,10 @@
+/home/andrew/ros2_ws/src/waitforme/build/andy/CMakeFiles/uninstall.dir
+/home/andrew/ros2_ws/src/waitforme/build/andy/CMakeFiles/andy_uninstall.dir
+/home/andrew/ros2_ws/src/waitforme/build/andy/CMakeFiles/path_planner.dir
+/home/andrew/ros2_ws/src/waitforme/build/andy/CMakeFiles/test.dir
+/home/andrew/ros2_ws/src/waitforme/build/andy/CMakeFiles/edit_cache.dir
+/home/andrew/ros2_ws/src/waitforme/build/andy/CMakeFiles/rebuild_cache.dir
+/home/andrew/ros2_ws/src/waitforme/build/andy/CMakeFiles/list_install_components.dir
+/home/andrew/ros2_ws/src/waitforme/build/andy/CMakeFiles/install.dir
+/home/andrew/ros2_ws/src/waitforme/build/andy/CMakeFiles/install/local.dir
+/home/andrew/ros2_ws/src/waitforme/build/andy/CMakeFiles/install/strip.dir

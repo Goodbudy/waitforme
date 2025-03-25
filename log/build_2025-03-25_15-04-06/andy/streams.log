@@ -1,0 +1,69 @@
+[0.021s] Invoking command in '/home/andrew/ros2_ws/src/waitforme/build/andy': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/andrew/ros2_ws/install/turtlebot3_teleop:/opt/ros/humble /usr/bin/cmake /home/andrew/ros2_ws/src/waitforme/andy -DCMAKE_INSTALL_PREFIX=/home/andrew/ros2_ws/src/waitforme/install/andy
+[0.100s] -- The C compiler identification is GNU 11.4.0
+[0.164s] -- The CXX compiler identification is GNU 11.4.0
+[0.173s] -- Detecting C compiler ABI info
+[0.250s] -- Detecting C compiler ABI info - done
+[0.255s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.256s] -- Detecting C compile features
+[0.256s] -- Detecting C compile features - done
+[0.258s] -- Detecting CXX compiler ABI info
+[0.345s] -- Detecting CXX compiler ABI info - done
+[0.356s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.356s] -- Detecting CXX compile features
+[0.357s] -- Detecting CXX compile features - done
+[0.360s] -- Found ament_cmake: 1.3.11 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.500s] -- Found Python3: /usr/bin/python3 (found version "3.10.12") found components: Interpreter 
+[0.588s] -- Found rclcpp_action: 16.0.11 (/opt/ros/humble/share/rclcpp_action/cmake)
+[0.620s] -- Found rosidl_generator_c: 3.1.6 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.623s] -- Found rosidl_adapter: 3.1.6 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.629s] -- Found rosidl_generator_cpp: 3.1.6 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.638s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.656s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.711s] -- Found rmw_implementation_cmake: 6.1.2 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[0.713s] -- Found rmw_fastrtps_cpp: 6.2.7 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[0.834s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.2")  
+[0.870s] -- Found FastRTPS: /opt/ros/humble/include  
+[0.918s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[0.925s] -- Looking for pthread.h
+[1.006s] -- Looking for pthread.h - found
+[1.007s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[1.098s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+[1.098s] -- Found Threads: TRUE  
+[1.140s] -- Found nav2_msgs: 1.1.18 (/opt/ros/humble/share/nav2_msgs/cmake)
+[1.180s] -- Found ament_lint_auto: 0.12.11 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[1.247s] -- Added test 'cppcheck' to perform static code analysis on C / C++ code
+[1.247s] -- Configured cppcheck include dirs: 
+[1.247s] -- Configured cppcheck exclude dirs and/or files: 
+[1.248s] -- Added test 'lint_cmake' to check CMake code style
+[1.252s] -- Added test 'uncrustify' to check C / C++ code style
+[1.252s] -- Configured uncrustify additional arguments: 
+[1.253s] -- Added test 'xmllint' to check XML markup files
+[1.254s] -- Configuring done
+[1.261s] -- Generating done
+[1.264s] -- Build files have been written to: /home/andrew/ros2_ws/src/waitforme/build/andy
+[1.274s] Invoked command in '/home/andrew/ros2_ws/src/waitforme/build/andy' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/andrew/ros2_ws/install/turtlebot3_teleop:/opt/ros/humble /usr/bin/cmake /home/andrew/ros2_ws/src/waitforme/andy -DCMAKE_INSTALL_PREFIX=/home/andrew/ros2_ws/src/waitforme/install/andy
+[1.276s] Invoking command in '/home/andrew/ros2_ws/src/waitforme/build/andy': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/andrew/ros2_ws/install/turtlebot3_teleop:/opt/ros/humble /usr/bin/cmake --build /home/andrew/ros2_ws/src/waitforme/build/andy -- -j12 -l12
+[1.340s] [ 50%] [32mBuilding CXX object CMakeFiles/path_planner.dir/src/path_planner.cpp.o[0m
+[4.356s] [100%] [32m[1mLinking CXX executable path_planner[0m
+[4.508s] [100%] Built target path_planner
+[4.524s] Invoked command in '/home/andrew/ros2_ws/src/waitforme/build/andy' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/andrew/ros2_ws/install/turtlebot3_teleop:/opt/ros/humble /usr/bin/cmake --build /home/andrew/ros2_ws/src/waitforme/build/andy -- -j12 -l12
+[4.539s] Invoking command in '/home/andrew/ros2_ws/src/waitforme/build/andy': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/andrew/ros2_ws/install/turtlebot3_teleop:/opt/ros/humble /usr/bin/cmake --install /home/andrew/ros2_ws/src/waitforme/build/andy
+[4.554s] -- Install configuration: ""
+[4.554s] -- Installing: /home/andrew/ros2_ws/src/waitforme/install/andy/lib/andy/path_planner
+[4.556s] -- Set runtime path of "/home/andrew/ros2_ws/src/waitforme/install/andy/lib/andy/path_planner" to ""
+[4.556s] -- Installing: /home/andrew/ros2_ws/src/waitforme/install/andy/share/ament_index/resource_index/package_run_dependencies/andy
+[4.557s] -- Installing: /home/andrew/ros2_ws/src/waitforme/install/andy/share/ament_index/resource_index/parent_prefix_path/andy
+[4.557s] -- Installing: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/environment/ament_prefix_path.sh
+[4.557s] -- Installing: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/environment/ament_prefix_path.dsv
+[4.557s] -- Installing: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/environment/path.sh
+[4.558s] -- Installing: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/environment/path.dsv
+[4.558s] -- Installing: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/local_setup.bash
+[4.559s] -- Installing: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/local_setup.sh
+[4.559s] -- Installing: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/local_setup.zsh
+[4.560s] -- Installing: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/local_setup.dsv
+[4.560s] -- Installing: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/package.dsv
+[4.560s] -- Installing: /home/andrew/ros2_ws/src/waitforme/install/andy/share/ament_index/resource_index/packages/andy
+[4.561s] -- Installing: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/cmake/andyConfig.cmake
+[4.561s] -- Installing: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/cmake/andyConfig-version.cmake
+[4.561s] -- Installing: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/package.xml
+[4.566s] Invoked command in '/home/andrew/ros2_ws/src/waitforme/build/andy' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/andrew/ros2_ws/install/turtlebot3_teleop:/opt/ros/humble /usr/bin/cmake --install /home/andrew/ros2_ws/src/waitforme/build/andy
