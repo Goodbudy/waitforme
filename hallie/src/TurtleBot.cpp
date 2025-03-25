@@ -12,13 +12,19 @@ TurtleBot::TurtleBot(std::string name, std::shared_ptr<rclcpp::Node> node)
     delivering_pub_ = node_->create_publisher<std_msgs::msg::Bool>(bot_name + "/delivering", 10);
     proximity_pub_ = node_->create_publisher<std_msgs::msg::Bool>(bot_name + "/proximity", 10);
 
-    client_ = rclcpp_action::create_client<NavigateToPose>(node_, "/" + bot_name + "/navigate_to_pose");
+    client_ = rclcpp_action::create_client<NavigateToPose>(
+        node_, "/" + bot_name + "/navigate_to_pose");
+    
 
-    while (!client_->wait_for_action_server(1s)) {
-        RCLCPP_INFO(node_->get_logger(), "[%s] Waiting for action server...", bot_name.c_str());
-    }
+    // while (!client_->wait_for_action_server(1s)) {
+    //     RCLCPP_INFO(node_->get_logger(), "[%s] Waiting for action server...", bot_name.c_str());
+    // }
 
     RCLCPP_INFO(node_->get_logger(), "[%s] TurtleBot initialized", bot_name.c_str());
+}
+
+bool TurtleBot::isActionServerReady() {
+    return client_->wait_for_action_server(std::chrono::seconds(1));
 }
 
 void TurtleBot::publishStatus() {
@@ -64,16 +70,16 @@ void TurtleBot::navigateTo(double x, double y) {
     send_goal_options.result_callback = [this](const GoalHandleNav::WrappedResult & result) {
         switch (result.code) {
             case rclcpp_action::ResultCode::SUCCEEDED:
-                RCLCPP_INFO(this->node_->get_logger(), "[%s] Navigation succeeded!", bot_name.c_str());
+                RCLCPP_INFO(node_->get_logger(), "[%s] Navigation succeeded!", bot_name.c_str());
                 break;
             case rclcpp_action::ResultCode::ABORTED:
-                RCLCPP_ERROR(this->node_->get_logger(), "[%s] Navigation aborted", bot_name.c_str());
+                RCLCPP_ERROR(node_->get_logger(), "[%s] Navigation aborted", bot_name.c_str());
                 break;
             case rclcpp_action::ResultCode::CANCELED:
-                RCLCPP_WARN(this->node_->get_logger(), "[%s] Navigation cancelled", bot_name.c_str());
+                RCLCPP_WARN(node_->get_logger(), "[%s] Navigation cancelled", bot_name.c_str());
                 break;
             default:
-                RCLCPP_WARN(this->node_->get_logger(), "[%s] Unknown result code", bot_name.c_str());
+                RCLCPP_WARN(node_->get_logger(), "[%s] Unknown result code", bot_name.c_str());
                 break;
         }
     };
@@ -90,4 +96,5 @@ void TurtleBot::setGoalPosition(double x, double y) {
     x_goal_ = x;
     y_goal_ = y;
 }
+
 

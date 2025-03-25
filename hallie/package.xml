@@ -20,6 +20,21 @@
   <depend>nav_msgs</depend>
   <depend>nav2_msgs</depend>
   <depend>rclcpp_action</depend>
+  
+  <!-- For using launch system -->
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  
+  <!-- For accessing share directories -->
+  <exec_depend>ament_index_python</exec_depend>
+  
+  <!-- For spawning in Gazebo -->
+  <exec_depend>gazebo_ros</exec_depend>
+  
+  <!-- For working with TurtleBot3 and URDF -->
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>turtlebot3_description</exec_depend>
+  <exec_depend>turtlebot3_gazebo</exec_depend>
 
   <!-- Declare testing dependencies -->
   <test_depend>ament_lint_auto</test_depend>
