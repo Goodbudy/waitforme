@@ -27,6 +27,10 @@ ament_target_dependencies(Utest_single_goal_distribution rclcpp std_msgs geometr
 # Install the executable
 install(TARGETS Utest_single_goal_distribution DESTINATION lib/${PROJECT_NAME})
 
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}/
+)
+
 # If building tests
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

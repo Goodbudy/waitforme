@@ -18,6 +18,8 @@ public:
 
     TurtleBot(std::string name, std::shared_ptr<rclcpp::Node> node);
 
+    void receiveGoal(const geometry_msgs::msg::Pose& goal);
+
     void publishStatus();
     void setAtHome(bool);
     void setDelivering(bool);
@@ -28,6 +30,8 @@ public:
     void navigateTo(double x, double y);
     void setHomePosition(double x, double y);
     void setGoalPosition(double x, double y);
+
+    bool isActionServerReady();
 
 private:
     std::string bot_name;
