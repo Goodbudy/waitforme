@@ -93,10 +93,7 @@
 #include <algorithm>
 
 // GoalManager::GoalManager(std::shared_ptr<TurtleBot> bot)
-//     : Node("goal_manager_node"), bot_(bot)
-// {
-//     // You can add subscribers later if needed
-// }
+//     : Node("goal_manager_node"), bot_(bot) {}
 
 // void GoalManager::sendGoal(double x, double y) {
 //     bot_->navigateTo(x, y);
