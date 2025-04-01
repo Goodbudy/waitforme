@@ -7,3 +7,5 @@ Step 4: get it to figure out where the other turtlebot is and how it's moving (m
 Step 5: Can use libraries but to use deep learning to predict what objects are. use SVM. https://scikit-learn.org/stable/modules/svm.html
 this will be a neural network, which i have fed data so it can hopefully recognise differnet objects
 
+
+

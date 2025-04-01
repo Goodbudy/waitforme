@@ -24,7 +24,7 @@ private:
         RCLCPP_INFO(this->get_logger(), "Published initial pose");
 
         // Give time for message to be sent before node shuts down
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        std::this_thread::sleep_for(std::chrono::seconds(10));
     }
 
     rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr publisher_;
@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
     auto node = std::make_shared<AutoLocalize>();
 
     rclcpp::spin_some(node);  // Allow processing of published message
-    std::this_thread::sleep_for(std::chrono::seconds(1)); // Ensure publish is completed
+    std::this_thread::sleep_for(std::chrono::seconds(10)); // Ensure publish is completed
 
     rclcpp::shutdown();
     return 0;

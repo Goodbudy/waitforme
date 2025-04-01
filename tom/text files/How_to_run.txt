@@ -3,11 +3,17 @@ but it's also so anyone else can stare in abject horror at what i don't know
 and question how i've made it this far.
 Oh also has the commands and stuff to you know. run the nodes or whatever they are
 
-1. Run your environment
-2. run your rviz nav2 map thingy. -see [Navigation with Ros2] in Guide_toTurtle
-3. run the following:
-ros2 run tom localization_node
+Step 1: How to run (aka: run environment)
+Terminal 1- launch world
+export TURTLEBOT3_MODEL=waffle_pi
+ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
 
+Terminal 2- launch map (aka: rviz nav2 map thingy)
+export TURTLEBOT3_MODEL=waffle_pi
+ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=$HOME/ros2_ws/src/waitforme/tom/turtle_map2.yaml
+
+Terminal 3- Run node
+ros2 run tom localization_node
 
 
 ok now for me to explain to myself how and where and why this all works
@@ -25,4 +31,4 @@ this is the Ros2 node name and what needs to be called by other nodes.
 
 TOPIC NAME
 this is the /initialpose which is published.
-note: with the current 
+note: with the current code we just publish a known starting position to the topic to initialise
