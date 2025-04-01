@@ -3,13 +3,13 @@
 #include <chrono>
 #include <thread>  // For sleep_for()
 
-class AutoLocalize : public rclcpp::Node {
+class AutoLocalise : public rclcpp::Node {
 public:
-    AutoLocalize() : Node("auto_localize") {
+    AutoLocalise() : Node("auto_localise") {
         publisher_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 10);
         std::this_thread::sleep_for(std::chrono::seconds(1)); // Ensure publisher is fully initialized
         set_initial_pose();
-        RCLCPP_INFO(this->get_logger(), "Localization Node Started");
+        RCLCPP_INFO(this->get_logger(), "Localisation Node Started");
     }
 
 private:
@@ -24,7 +24,7 @@ private:
         RCLCPP_INFO(this->get_logger(), "Published initial pose");
 
         // Give time for message to be sent before node shuts down
-        std::this_thread::sleep_for(std::chrono::seconds(10));
+        std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 
     rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr publisher_;
@@ -32,10 +32,10 @@ private:
 
 int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
-    auto node = std::make_shared<AutoLocalize>();
+    auto node = std::make_shared<AutoLocalise>();
 
     rclcpp::spin_some(node);  // Allow processing of published message
-    std::this_thread::sleep_for(std::chrono::seconds(10)); // Ensure publish is completed
+    std::this_thread::sleep_for(std::chrono::seconds(2)); // Ensure publish is completed
 
     rclcpp::shutdown();
     return 0;

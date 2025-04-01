@@ -13,7 +13,7 @@ export TURTLEBOT3_MODEL=waffle_pi
 ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=$HOME/ros2_ws/src/waitforme/tom/turtle_map2.yaml
 
 Terminal 3- Run node
-ros2 run tom localization_node
+ros2 run tom localisation_node
 
 
 ok now for me to explain to myself how and where and why this all works
@@ -23,10 +23,10 @@ this is again referrenced in the CMakeList.
 
 NODE NAME
 2 types. 1 is what i call when actually spinning up the node
-aka localization_node. This is set in the CMakeList. this is the executable name
+aka localisation_node. This is set in the CMakeList. this is the executable name
 The other is the one displayed when i run:
 ros2 node list
-for now this says "auto_localise" and this is set in the localization.cpp file.
+for now this says "auto_localise" and this is set in the localisation.cpp file.
 this is the Ros2 node name and what needs to be called by other nodes.
 
 TOPIC NAME

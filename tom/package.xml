@@ -2,7 +2,7 @@
 <package format="3">
   <name>tom</name>
   <version>0.0.1</version>
-  <description>Localization package for TurtleBot3</description>
+  <description>Localieation package for TurtleBot3</description>
   <maintainer email="your_email@example.com">Your Name</maintainer>
   <license>Apache-2.0</license>
 
@@ -16,7 +16,7 @@
   <export>
     <build_type>ament_cmake</build_type>
     <launch>
-      <launch_file>localization_launch.py</launch_file>
+      <launch_file>localisation_launch.py</launch_file>
     </launch>
   </export>
 </package>
