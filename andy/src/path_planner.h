@@ -23,8 +23,12 @@ class PathPlanner : public rclcpp::Node {
         rclcpp_action::Client<NavigateToPose>::SharedPtr client_;
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
         double x_goal, y_goal;  
-        double current_x;
-        double current_y;
+        double current_posx;
+        double current_posy;
+        double current_Qx;
+        double current_Qy;
+        double current_Qz;
+        double current_Qw;
         void listen_for_input();
         void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
     };

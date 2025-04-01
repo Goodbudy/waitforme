@@ -71,16 +71,29 @@ void PathPlanner::listen_for_input()
         }
         if (input.find("position") == 0)
         {
-        double x = current_x;
-        double y = current_y;
-        RCLCPP_INFO(this->get_logger(), "Current position X: %.2f Y: %.2f", x, y);
+        double x = current_posx;
+        double y = current_posy;
+        double Qx = current_Qx;
+        double Qy = current_Qy;
+        double Qz = current_Qz;
+        double Qw = current_Qw;
+        RCLCPP_INFO(this->get_logger(), "Current position at: %.2f Y: %.2f current rotation X: %.2f Y: %.2f Z: %.2f W: %.2f", x, y, Qx, Qy, Qz, Qw);
+        }
+        if (input.find("stop") == 0)
+        {
+            RCLCPP_INFO(this->get_logger(), "Stopping robot by canceling current goal.");
+            this->client_->async_cancel_all_goals();
         }
     }
 }
 
 void PathPlanner::odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
-    current_x = msg->pose.pose.position.x;
-    current_y = msg->pose.pose.position.y;
+    current_posx = msg->pose.pose.position.x;
+    current_posy = msg->pose.pose.position.y;
+    current_Qw = msg->pose.pose.orientation.w;
+    current_Qx = msg->pose.pose.orientation.x;
+    current_Qy = msg->pose.pose.orientation.y;
+    current_Qz = msg->pose.pose.orientation.z;
 }
 
 int main(int argc, char **argv)

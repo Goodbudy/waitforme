@@ -7,7 +7,7 @@ Assumption for all tests as follows:
 Proceedure for starting Gazebo, Rviz and Andy Package:
     Terminal 1:
         export TURTLEBOT3_MODEL=waffle_pi
-        ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py4
+        ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
     Terminal 2: 
         export TURTLEBOT3_MODEL=waffle_pi
         ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=true
