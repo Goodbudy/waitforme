@@ -19,7 +19,7 @@ refer to Guide_toGit to ignore packages
 [Exporting model]--
 exporting is used in several stages so good to know how to do it:
 export TURTLEBOT3_MODEL=<desired_model>
-eg: export TURTLEBOT3_MODEL=burger
+eg: export TURTLEBOT3_MODEL=waffle_pi
 
 -types of models include
 burger
@@ -33,13 +33,13 @@ note: assumes packages are setup in similar position to mine
 this requires exporting the desired model and then launching the world - see [Exporting model]
 after exporting lauch desired world
 ros2 launch turtlebot3_gazebo <world_name>.launch.py
-eg: ros2 launch turtlebot3_gazebo empty_world.launch.py
+eg: ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
 
 available worlds include:
-empty_world.world            turtlebot3_dqn_stage4.world
-turtlebot3_dqn_stage1.world  turtlebot3_house.world
-turtlebot3_dqn_stage2.world  turtlebot3_world.world
-turtlebot3_dqn_stage3.world
+empty_world                  turtlebot3_dqn_stage4
+turtlebot3_dqn_stage1        turtlebot3_house
+turtlebot3_dqn_stage2        turtlebot3_world
+turtlebot3_dqn_stage3
 
 note: dqn are for machine learning
 
@@ -97,7 +97,7 @@ ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True
 for custom worlds there are two main methods of running the correct navigation file:
 Method 1 - run with directory and map name.
 ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=$HOME/<desired_directory>/<map_name.yaml>
-eg: ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=$HOME/ros2_ws/src/waitforme/Tom/turtle_map2.yaml
+eg: ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=$HOME/ros2_ws/src/waitforme/tom/turtle_map2.yaml
 
 Method 2 - run from desired directory
 cd <desired_directory>

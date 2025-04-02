@@ -6,6 +6,7 @@
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include <iostream>
 #include <string>
 #include <thread>
@@ -20,8 +21,16 @@ class PathPlanner : public rclcpp::Node {
     
     private:
         rclcpp_action::Client<NavigateToPose>::SharedPtr client_;
-        double x_goal, y_goal;
+        rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+        double x_goal, y_goal;  
+        double current_posx;
+        double current_posy;
+        double current_Qx;
+        double current_Qy;
+        double current_Qz;
+        double current_Qw;
         void listen_for_input();
+        void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
     };
     
     #endif // PATHPLANNER_HPP

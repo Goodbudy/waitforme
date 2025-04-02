@@ -1,0 +1,23 @@
+[0.013s] Invoking command in '/home/andrew/ros2_ws/src/waitforme/build/andy': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/andrew/ros2_ws/install/turtlebot3_teleop:/opt/ros/humble /usr/bin/cmake --build /home/andrew/ros2_ws/src/waitforme/build/andy -- -j12 -l12
+[0.066s] [35m[1mConsolidate compiler generated dependencies of target path_planner[0m
+[0.088s] [100%] Built target path_planner
+[0.104s] Invoked command in '/home/andrew/ros2_ws/src/waitforme/build/andy' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/andrew/ros2_ws/install/turtlebot3_teleop:/opt/ros/humble /usr/bin/cmake --build /home/andrew/ros2_ws/src/waitforme/build/andy -- -j12 -l12
+[0.121s] Invoking command in '/home/andrew/ros2_ws/src/waitforme/build/andy': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/andrew/ros2_ws/install/turtlebot3_teleop:/opt/ros/humble /usr/bin/cmake --install /home/andrew/ros2_ws/src/waitforme/build/andy
+[0.131s] -- Install configuration: ""
+[0.131s] -- Up-to-date: /home/andrew/ros2_ws/src/waitforme/install/andy/lib/andy/path_planner
+[0.131s] -- Up-to-date: /home/andrew/ros2_ws/src/waitforme/install/andy/share/ament_index/resource_index/package_run_dependencies/andy
+[0.131s] -- Up-to-date: /home/andrew/ros2_ws/src/waitforme/install/andy/share/ament_index/resource_index/parent_prefix_path/andy
+[0.131s] -- Up-to-date: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/environment/ament_prefix_path.sh
+[0.131s] -- Up-to-date: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/environment/ament_prefix_path.dsv
+[0.132s] -- Up-to-date: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/environment/path.sh
+[0.132s] -- Up-to-date: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/environment/path.dsv
+[0.132s] -- Up-to-date: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/local_setup.bash
+[0.132s] -- Up-to-date: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/local_setup.sh
+[0.132s] -- Up-to-date: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/local_setup.zsh
+[0.132s] -- Up-to-date: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/local_setup.dsv
+[0.132s] -- Installing: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/package.dsv
+[0.132s] -- Up-to-date: /home/andrew/ros2_ws/src/waitforme/install/andy/share/ament_index/resource_index/packages/andy
+[0.132s] -- Up-to-date: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/cmake/andyConfig.cmake
+[0.132s] -- Up-to-date: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/cmake/andyConfig-version.cmake
+[0.132s] -- Up-to-date: /home/andrew/ros2_ws/src/waitforme/install/andy/share/andy/package.xml
+[0.135s] Invoked command in '/home/andrew/ros2_ws/src/waitforme/build/andy' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/andrew/ros2_ws/install/turtlebot3_teleop:/opt/ros/humble /usr/bin/cmake --install /home/andrew/ros2_ws/src/waitforme/build/andy

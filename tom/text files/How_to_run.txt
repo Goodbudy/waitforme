@@ -1,0 +1,34 @@
+ok so this is most definitly just for me to understand how this stuff works
+but it's also so anyone else can stare in abject horror at what i don't know
+and question how i've made it this far.
+Oh also has the commands and stuff to you know. run the nodes or whatever they are
+
+Step 1: How to run (aka: run environment)
+Terminal 1- launch world
+export TURTLEBOT3_MODEL=waffle_pi
+ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
+
+Terminal 2- launch map (aka: rviz nav2 map thingy)
+export TURTLEBOT3_MODEL=waffle_pi
+ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=$HOME/ros2_ws/src/waitforme/tom/turtle_map2.yaml
+
+Terminal 3- Run node
+ros2 run tom localisation_node
+
+
+ok now for me to explain to myself how and where and why this all works
+THE FOLDER NAME IS NOT THE PACKAGE NAME
+package.xml sets up package name
+this is again referrenced in the CMakeList.
+
+NODE NAME
+2 types. 1 is what i call when actually spinning up the node
+aka localisation_node. This is set in the CMakeList. this is the executable name
+The other is the one displayed when i run:
+ros2 node list
+for now this says "auto_localise" and this is set in the localisation.cpp file.
+this is the Ros2 node name and what needs to be called by other nodes.
+
+TOPIC NAME
+this is the /initialpose which is published.
+note: with the current code we just publish a known starting position to the topic to initialise
