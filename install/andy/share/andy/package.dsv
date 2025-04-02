@@ -1,8 +1,0 @@
-source;share/andy/hook/cmake_prefix_path.ps1
-source;share/andy/hook/cmake_prefix_path.dsv
-source;share/andy/hook/cmake_prefix_path.sh
-source;share/andy/local_setup.bash
-source;share/andy/local_setup.dsv
-source;share/andy/local_setup.ps1
-source;share/andy/local_setup.sh
-source;share/andy/local_setup.zsh

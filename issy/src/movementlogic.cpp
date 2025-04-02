@@ -15,7 +15,7 @@ public:
     using NavigateToPose = nav2_msgs::action::NavigateToPose;
     using GoalHandleNav = rclcpp_action::ClientGoalHandle<NavigateToPose>;
 
-    MovementLogic() : Node("movementlogic"), x_home(-2.0), y_home(0.0), tolerance(0.2), executing_goal(false) {
+    MovementLogic() : Node("movementlogic"), x_home(3.5), y_home(3.2), tolerance(0.2), executing_goal(false) {
         client_ = rclcpp_action::create_client<NavigateToPose>(this, "navigate_to_pose");
 
         // Wait for the action server to become available
