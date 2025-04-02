@@ -1,0 +1,35 @@
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Enabled: true
+
+    - Class: rviz_default_plugins/LaserScan
+      Name: LaserScan
+      Enabled: true
+      Topic: /tb3_4/scan
+      Queue Size: 10
+      Style: Points
+      Color Transformer: Intensity
+      Size (Pixels): 3
+      Alpha: 1
+
+    - Class: rviz_default_plugins/PoseArray
+      Name: Particles
+      Enabled: true
+      Topic: /tb3_4/amcl/particlecloud
+      Queue Size: 10
+      Color: 255; 0; 0
+
+    - Class: rviz_default_plugins/Odometry
+      Name: Odometry
+      Enabled: true
+      Topic: /tb3_4/odom
+      Queue Size: 10
+      Color: 0; 255; 0
+
+  Fixed Frame: tb3_4/map
+  Global Options:
+    Background Color: 48; 48; 48
+    Frame Rate: 30
