@@ -210,6 +210,43 @@ path_planner/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/path_planner.dir/build.make CMakeFiles/path_planner.dir/build
 .PHONY : path_planner/fast
 
+#=============================================================================
+# Target rules for targets named astar_planner
+
+# Build rule for target.
+astar_planner: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 astar_planner
+.PHONY : astar_planner
+
+# fast build rule for target.
+astar_planner/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/astar_planner.dir/build.make CMakeFiles/astar_planner.dir/build
+.PHONY : astar_planner/fast
+
+src/astar_planner.o: src/astar_planner.cpp.o
+.PHONY : src/astar_planner.o
+
+# target to build an object file
+src/astar_planner.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/astar_planner.dir/build.make CMakeFiles/astar_planner.dir/src/astar_planner.cpp.o
+.PHONY : src/astar_planner.cpp.o
+
+src/astar_planner.i: src/astar_planner.cpp.i
+.PHONY : src/astar_planner.i
+
+# target to preprocess a source file
+src/astar_planner.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/astar_planner.dir/build.make CMakeFiles/astar_planner.dir/src/astar_planner.cpp.i
+.PHONY : src/astar_planner.cpp.i
+
+src/astar_planner.s: src/astar_planner.cpp.s
+.PHONY : src/astar_planner.s
+
+# target to generate assembly for a file
+src/astar_planner.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/astar_planner.dir/build.make CMakeFiles/astar_planner.dir/src/astar_planner.cpp.s
+.PHONY : src/astar_planner.cpp.s
+
 src/path_planner.o: src/path_planner.cpp.o
 .PHONY : src/path_planner.o
 
@@ -249,7 +286,11 @@ help:
 	@echo "... test"
 	@echo "... andy_uninstall"
 	@echo "... uninstall"
+	@echo "... astar_planner"
 	@echo "... path_planner"
+	@echo "... src/astar_planner.o"
+	@echo "... src/astar_planner.i"
+	@echo "... src/astar_planner.s"
 	@echo "... src/path_planner.o"
 	@echo "... src/path_planner.i"
 	@echo "... src/path_planner.s"

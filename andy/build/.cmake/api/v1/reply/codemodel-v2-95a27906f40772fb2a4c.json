@@ -7,7 +7,7 @@
 				{
 					"build" : ".",
 					"hasInstallRule" : true,
-					"jsonFile" : "directory-.-Debug-a7c3d97242ae5df99cc7.json",
+					"jsonFile" : "directory-.-Debug-0c6b7095ba7541189a57.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.12"
@@ -18,7 +18,8 @@
 					[
 						0,
 						1,
-						2
+						2,
+						3
 					]
 				}
 			],
@@ -35,7 +36,8 @@
 					[
 						0,
 						1,
-						2
+						2,
+						3
 					]
 				}
 			],
@@ -50,8 +52,15 @@
 				},
 				{
 					"directoryIndex" : 0,
+					"id" : "astar_planner::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-astar_planner-Debug-a612cd994a054234d811.json",
+					"name" : "astar_planner",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
 					"id" : "path_planner::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-path_planner-Debug-fda804b4e59d7ece6073.json",
+					"jsonFile" : "target-path_planner-Debug-04ebfb5ee56125bb4e45.json",
 					"name" : "path_planner",
 					"projectIndex" : 0
 				},

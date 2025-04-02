@@ -24,3 +24,5 @@ Terminal 3:
 
 To run through the real robot, follow this guide:https://canvas.uts.edu.au/courses/34276/pages/turtlebots-new-getting-started-ros-1-and-ros-2?module_item_id=2133795
 Make sure to have an Rviz open, but not gazebo. Gazebo is now replaced by the real robot. 
+
+Useful information about A* program: https://chatgpt.com/share/67ecab6e-ce20-8005-83ab-dd81b5d0d612
