@@ -21,8 +21,11 @@ class AstarPlanner : public rclcpp::Node {
     struct ComparePoint;
     float eclidDist(int x1, int y1, int x2, int y2);
     void convertToBinaryGrid(const nav_msgs::msg::OccupancyGrid& map);
-    void saveGridAsImage(const std::vector<std::vector<int>>& grid, const std::string& filename);
-    std::vector<Point*> aStarSearch(int startX, int startY, int goalX, int goalY, std::vector<std::vector<int>>& grid);
+    void saveGridAsImage(const std::vector<std::vector<int>>& grid, const std::string& filename, const std::vector<Point*>& path);
+    std::vector<Point*> aStarSearch(double startX, double startY, double goalX, double goalY, std::vector<std::vector<int>>& grid);
+    double origin_x;
+    double origin_y;
+    double resolution;
 
 };
 
