@@ -65,21 +65,38 @@ void AstarPlanner::convertToBinaryGrid(const nav_msgs::msg::OccupancyGrid &map)
     origin_y = map.info.origin.position.y;
     resolution = map.info.resolution;
     RCLCPP_INFO(this->get_logger(), "origin x = %.2f, y = %.2f, resolution = %.2f", origin_x, origin_y, resolution);
+    RCLCPP_INFO(this->get_logger(), "map data size = %zu", map.data.size());
+    RCLCPP_INFO(this->get_logger(), "map width: %d map height: %d", width, height);
+    if (map.data.size() != static_cast<size_t>(width) * height)
+{
+    RCLCPP_ERROR(this->get_logger(), "Map data size does not match width * height.");
+    return;  // or handle this gracefully
+}
 
+    RCLCPP_INFO(this->get_logger(), "0");
     std::vector<std::vector<int>> binaryGrid(height, std::vector<int>(width, 0));
-
+    RCLCPP_INFO(this->get_logger(), "1");
+    //change this from 70 to width
     for (int x = 0; x < width; ++x)
     {
+        // change this from 70 to height
         for (int y = 0; y < height; ++y)
-        {
+        {   
+            RCLCPP_INFO(this->get_logger(), "x pos: %d y pos: %d", x, y);
             int index = y * width + x;
             int value = map.data[index];
 
             // Mark as 1 if occupied or unknown
             if (value == 100 || value == -1)
+            {
                 binaryGrid[x][y] = 1;
+                //RCLCPP_INFO(this->get_logger(), "ocupied");
+            }
             else
+            {
                 binaryGrid[x][y] = 0;
+                //RCLCPP_INFO(this->get_logger(), "freespace");
+            }
         }
     }
     RCLCPP_INFO(this->get_logger(), "convert to binary");
