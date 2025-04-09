@@ -23,7 +23,7 @@ Terminal 3:
 
 Terminal 4:
 - "Below command will add goal to the queue
-- ros2 service call /add_goal issy/srv/AddGoal "{x: 1.0, y: 2.0}"
+- ros2 service call /add_goal issy/srv/AddGoal "{x: 2.0, y: 2.5}"
 
 - "This one will execute the next goal in the list
 - ros2 service call /execute_goals issy/srv/ExecuteGoals "{}"
