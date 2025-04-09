@@ -6,19 +6,19 @@
 int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
 
-    auto bot1_node = std::make_shared<rclcpp::Node>("bot1_node");
-    auto bot2_node = std::make_shared<rclcpp::Node>("bot2_node");
+    auto tb3_1 = std::make_shared<rclcpp::Node>("tb3_1");
+    auto tb3_2 = std::make_shared<rclcpp::Node>("tb3_2");
 
-    auto bot1 = std::make_shared<TurtleBot>("bot1", bot1_node);
-    auto bot2 = std::make_shared<TurtleBot>("bot2", bot2_node);
+    auto bot1 = std::make_shared<TurtleBot>("bot1", tb3_1);
+    auto bot2 = std::make_shared<TurtleBot>("bot2", tb3_2);
 
     auto goal_manager = std::make_shared<GoalManager>();
     goal_manager->registerBot(bot1);
     goal_manager->registerBot(bot2);    
 
     rclcpp::executors::MultiThreadedExecutor executor;
-    executor.add_node(bot1_node);
-    executor.add_node(bot2_node);
+    executor.add_node(tb3_1);
+    executor.add_node(tb3_2);
     executor.add_node(goal_manager);
 
     std::thread spin_thread([&executor]() {
@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     });
 
     while (!bot1->isActionServerReady() || !bot2->isActionServerReady()) {
-        RCLCPP_INFO(bot1_node->get_logger(), "Waiting for both action servers...");
+        RCLCPP_INFO(tb3_1->get_logger(), "Waiting for both action servers...");
         rclcpp::sleep_for(std::chrono::seconds(1));
     }
 
@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 // int main(int argc, char **argv) {
 //     rclcpp::init(argc, argv);
 
-//     auto turtlebot_node = std::make_shared<rclcpp::Node>("bot1_node");
+//     auto turtlebot_node = std::make_shared<rclcpp::Node>("tb3_1");
 //     auto bot1 = std::make_shared<TurtleBot>("bot1", turtlebot_node);
 //     auto goal_manager = std::make_shared<GoalManager>(bot1);
 
