@@ -1,23 +1,29 @@
 Notes:
-- run all of this in your ros2_ws
+- "run all of this in your ros2_ws
 
 Terminal 1:
 - export TURTLEBOT3_MODEL=waffle_pi
-- ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
+- ros2 launch turtlebot3_gazebo Gallery_Test2.launch.py
 
 Terminal 2: 
 - export TURTLEBOT3_MODEL=waffle_pi
-- ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=true
-- Localise the turtlebot in RViz using the 2DPoseEstimate thing, then minimise window
+- ros2 launch turtlebot3_navigation2 navigation2.launch.py map:=$HOME/ros2_ws/Gallerymap.yaml
+- "Localise the turtlebot in RViz using the 2DPoseEstimate thing, then minimise window
 
 Terminal 3:
 - colcon build --packages-select issy
 - ros2 run issy movementlogic
 
-Terminal 3:
-- Yes in terminal 3
-- To push goals into the queue, write "goal x y", eg. "goal 2.0 0.0"
-- You can push goals into the queue at any time during the movement 
-- To trigger movement to the goals in the list from the home base, write "movenow" 
-- It'll prompt you for the movenow thing
+-- Terminal 3:
+-- - Yes in terminal 3
+-- - To push goals into the queue, write "goal x y", eg. "goal 2.0 0.0"
+-- - You can push goals into the queue at any time during the movement 
+-- - To trigger movement to the goals in the list from the home base, write "movenow" 
+-- - It'll prompt you for the movenow thing
 
+Terminal 4:
+- "Below command will add goal to the queue
+- ros2 service call /add_goal issy/srv/AddGoal "{x: 1.0, y: 2.0}"
+
+- "This one will execute the next goal in the list
+- ros2 service call /execute_goals issy/srv/ExecuteGoals "{}"

@@ -10,6 +10,12 @@
 #include <string>
 #include <thread>
 #include <chrono>
+#include <queue>
+#include "issy/srv/add_goal.hpp"
+#include "issy/srv/execute_goals.hpp"
+
+using std::placeholders::_1;
+using std::placeholders::_2;
 
 class MovementLogic : public rclcpp::Node {
 public:
@@ -20,12 +26,28 @@ public:
 
 private:
     rclcpp_action::Client<NavigateToPose>::SharedPtr client_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr odom_sub_;
+    rclcpp::Service<issy::srv::AddGoal>::SharedPtr add_goal_service_;
+    rclcpp::Service<issy::srv::ExecuteGoals>::SharedPtr execute_goals_service_;
     double x_home, y_home;
-    double x_goal, y_goal;
-    bool move_now;
+    double tolerance;
+    double current_x = 0.0, current_y = 0.0;
+    std::queue<std::pair<double, double>> goal_queue;
+    bool executing_goal;
+    bool home_base_reached = false;
+
+    void handle_add_goal(const std::shared_ptr<issy::srv::AddGoal::Request> request,
+                          std::shared_ptr<issy::srv::AddGoal::Response> response);
+
+    void handle_execute_goals(const std::shared_ptr<issy::srv::ExecuteGoals::Request> request,
+                               std::shared_ptr<issy::srv::ExecuteGoals::Response> response);
 
     void listen_for_input();
-    void navigate_to(double x, double y);
+    void execute_next_goal();
+    void navigate_to(double x, double y, std::function<void()> on_success);
+    void navigate_to_home_base();
+    void odom_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+    void print_remaining_goals();
 };
 
 #endif // MOVEMENTLOGIC_HPP

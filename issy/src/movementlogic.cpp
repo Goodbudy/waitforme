@@ -1,6 +1,5 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "std_msgs/msg/string.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include <iostream>
@@ -9,6 +8,11 @@
 #include <chrono>
 #include <cmath>
 #include <queue>
+#include "issy/srv/add_goal.hpp"
+#include "issy/srv/execute_goals.hpp"
+
+using std::placeholders::_1;
+using std::placeholders::_2;
 
 class MovementLogic : public rclcpp::Node {
 public:
@@ -31,13 +35,20 @@ public:
         RCLCPP_INFO(this->get_logger(), "Navigating to home base...");
         navigate_to_home_base();
 
-        // Start listening for input (goal commands or "movenow" command)
-        std::thread(&MovementLogic::listen_for_input, this).detach();
+        // Start the services
+        add_goal_service_ = this->create_service<issy::srv::AddGoal>(
+            "add_goal", std::bind(&MovementLogic::handle_add_goal, this, _1, _2));
+
+        execute_goals_service_ = this->create_service<issy::srv::ExecuteGoals>(
+            "execute_goals", std::bind(&MovementLogic::handle_execute_goals, this, _1, _2));   
     }
 
 private:
     rclcpp_action::Client<NavigateToPose>::SharedPtr client_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr odom_sub_;
+    rclcpp::Service<issy::srv::AddGoal>::SharedPtr add_goal_service_;
+    rclcpp::Service<issy::srv::ExecuteGoals>::SharedPtr execute_goals_service_;
+    
     double x_home, y_home;
     double tolerance;
     double current_x = 0.0, current_y = 0.0;
@@ -45,21 +56,24 @@ private:
     bool executing_goal;
     bool home_base_reached = false;
 
-    void listen_for_input() {
-        while (rclcpp::ok()) {
-            std::string input;
-            std::getline(std::cin, input);
+    void handle_add_goal(const std::shared_ptr<issy::srv::AddGoal::Request> request,
+        std::shared_ptr<issy::srv::AddGoal::Response> response) {
+        goal_queue.push({request->x, request->y});
+        response->success = true;
+        response->message = "Goal added successfully.";
+        RCLCPP_INFO(this->get_logger(), "Service: Added goal x=%.2f, y=%.2f", request->x, request->y);
+    }
 
-            if (input.find("goal ") == 0) {
-                double x, y;
-                sscanf(input.c_str(), "goal %lf %lf", &x, &y);
-                goal_queue.push({x, y});
-                RCLCPP_INFO(this->get_logger(), "Added goal: x=%.2f, y=%.2f", x, y);
-            }
-            else if (input == "movenow" && !executing_goal && home_base_reached) {
-                executing_goal = true;
-                execute_next_goal();
-            }
+    void handle_execute_goals(const std::shared_ptr<issy::srv::ExecuteGoals::Request> /*request*/,
+             std::shared_ptr<issy::srv::ExecuteGoals::Response> response) {
+        if (!executing_goal && home_base_reached) {
+            executing_goal = true;
+            execute_next_goal();
+            response->success = true;
+            response->message = "Executing next goal.";
+        } else {
+            response->success = false;
+            response->message = "Already executing or home base not yet reached.";
         }
     }
 
