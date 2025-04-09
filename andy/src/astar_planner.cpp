@@ -8,12 +8,15 @@
 #include <opencv2/opencv.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "nav_msgs/msg/path.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 AstarPlanner::AstarPlanner() : Node("astarplanner")
 {
     occupancy_grid_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
         "/map", 10, std::bind(&AstarPlanner::convertToBinaryGrid, this, std::placeholders::_1));
     RCLCPP_INFO(this->get_logger(), "Node Started");
+    path_publisher_ = this->create_publisher<nav_msgs::msg::Path>("planned_path", 10);
 }
 
 // Each node represents a point on the grid.
@@ -81,15 +84,9 @@ void AstarPlanner::convertToBinaryGrid(const nav_msgs::msg::OccupancyGrid &map)
     }
     RCLCPP_INFO(this->get_logger(), "convert to binary");
     auto gridPath = AstarPlanner::aStarSearch(startX, startY, goalX, goalY, binaryGrid);
-    std::vector<std::pair<double, double>> worldPath;
-    for (const auto &path : gridPath)
-    {
-        double wx = path->x * resolution + origin_x + resolution / 2.0;
-        double wy = path->y * resolution + origin_y + resolution / 2.0;
-        worldPath.emplace_back(wx, wy);
-        RCLCPP_INFO(this->get_logger(), "world path x: %.2f, y: %.2f", wx, wy);
-    }
+    std::vector<std::pair<double, double>> worldPath = convertGridToWorld(gridPath);
     AstarPlanner::saveGridAsImage(binaryGrid, "Binary Grid", gridPath);
+    publishPath(worldPath);
 }
 
 // currently image is flipped in the x and y axis.
@@ -125,16 +122,51 @@ void AstarPlanner::saveGridAsImage(const std::vector<std::vector<int>> &grid, co
         RCLCPP_INFO(this->get_logger(), "Path point x: %d, Path point y: %d", point->x, point->y);
         image.at<cv::Vec3b>(point->y, point->x) = cv::Vec3b(0, 0, 255); // Red (BGR format)
     }
-    // // Draw start position in GREEN
-    // cv::circle(image, cv::Point(startX, startY), 3, cv::Scalar(0, 255, 0), -1);
 
-    // // Draw goal position in RED
-    // cv::circle(image, cv::Point(goalX, goalY), 3, cv::Scalar(0, 0, 255), -1);
     RCLCPP_INFO(this->get_logger(), "image saved");
     std::string filePath = filename + ".png";
     cv::Mat rotated;
     cv::flip(image, rotated, -1); // Rotate 180°
     cv::imwrite(filePath, rotated);
+}
+
+std::vector<std::pair<double, double>> AstarPlanner::convertGridToWorld(std::vector<AstarPlanner::Point *> gridPath)
+{
+    std::vector<std::pair<double, double>> worldPath;
+    for (const auto &path : gridPath)
+    {
+        double wx = path->x * resolution + origin_x + resolution / 2.0;
+        double wy = path->y * resolution + origin_y + resolution / 2.0;
+        worldPath.emplace_back(wx, wy);
+        RCLCPP_INFO(this->get_logger(), "world path x: %.2f, y: %.2f", wx, wy);
+    }
+    return worldPath;
+}
+
+void AstarPlanner::publishPath(std::vector<std::pair<double, double>> worldPath)
+{
+    nav_msgs::msg::Path rosPath;
+    rosPath.header.stamp = this->get_clock()->now();
+    rosPath.header.frame_id = "map"; // Make sure it matches your TF
+
+    for (const auto &[x, y] : worldPath)
+    {
+        geometry_msgs::msg::PoseStamped pose;
+        pose.header.stamp = this->get_clock()->now();
+        pose.header.frame_id = "map"; // Consistency with the path header
+
+        pose.pose.position.x = x;
+        pose.pose.position.y = y;
+        pose.pose.position.z = 0.0;
+
+        pose.pose.orientation.w = 1.0; // Neutral orientation
+
+        rosPath.poses.push_back(pose);
+    }
+
+    // Publish the path
+    path_publisher_->publish(rosPath);
+    RCLCPP_INFO(this->get_logger(), "Published world path with %zu points", rosPath.poses.size());
 }
 
 // Impliment A* algorithim. Take an initial start X and Y positon, a goal X and Y Position and a map

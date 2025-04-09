@@ -19,7 +19,7 @@ add_executable(path_planner src/path_planner.cpp)
 ament_target_dependencies(path_planner rclcpp rclcpp_action nav2_msgs geometry_msgs)
 
 add_executable(astar_planner src/astar_planner.cpp)
-ament_target_dependencies(astar_planner rclcpp rclcpp_action nav_msgs OpenCV)
+ament_target_dependencies(astar_planner rclcpp rclcpp_action nav_msgs geometry_msgs OpenCV)
 
 # Install the executable
 install(TARGETS
