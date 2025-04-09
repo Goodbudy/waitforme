@@ -408,9 +408,6 @@ nav2_msgs_DIR:PATH=/opt/ros/humble/share/nav2_msgs/cmake
 //The directory containing a CMake configuration file for nav_msgs.
 nav_msgs_DIR:PATH=/opt/ros/humble/share/nav_msgs/cmake
 
-//The directory containing a CMake configuration file for occupency_grid.
-occupency_grid_DIR:PATH=occupency_grid_DIR-NOTFOUND
-
 //Path to a library.
 pkgcfg_lib__OPENSSL_crypto:FILEPATH=/usr/lib/x86_64-linux-gnu/libcrypto.so
 

@@ -52,6 +52,10 @@ float AstarPlanner::eclidDist(int x1, int y1, int x2, int y2)
 
 void AstarPlanner::convertToBinaryGrid(const nav_msgs::msg::OccupancyGrid &map)
 {
+    double startX = 0;
+    double startY = 0.5;
+    double goalX = 0;
+    double goalY = -2;
     int width = map.info.width;
     int height = map.info.height;
     origin_x = map.info.origin.position.x;
@@ -59,37 +63,43 @@ void AstarPlanner::convertToBinaryGrid(const nav_msgs::msg::OccupancyGrid &map)
     resolution = map.info.resolution;
     RCLCPP_INFO(this->get_logger(), "origin x = %.2f, y = %.2f, resolution = %.2f", origin_x, origin_y, resolution);
 
-
     std::vector<std::vector<int>> binaryGrid(height, std::vector<int>(width, 0));
 
-    for (int y = 0; y < height; ++y)
+    for (int x = 0; x < width; ++x)
     {
-        for (int x = 0; x < width; ++x)
+        for (int y = 0; y < height; ++y)
         {
             int index = y * width + x;
             int value = map.data[index];
 
             // Mark as 1 if occupied or unknown
             if (value == 100 || value == -1)
-                binaryGrid[y][x] = 1;
+                binaryGrid[x][y] = 1;
             else
-                binaryGrid[y][x] = 0;
+                binaryGrid[x][y] = 0;
         }
     }
     RCLCPP_INFO(this->get_logger(), "convert to binary");
-    auto path = AstarPlanner::aStarSearch(0, 0.5, 0, -2, binaryGrid);
-    AstarPlanner::saveGridAsImage(binaryGrid, "Binary Grid", path);
+    auto gridPath = AstarPlanner::aStarSearch(startX, startY, goalX, goalY, binaryGrid);
+    std::vector<std::pair<double, double>> worldPath;
+    for (const auto &path : gridPath)
+    {
+        double wx = path->x * resolution + origin_x + resolution / 2.0;
+        double wy = path->y * resolution + origin_y + resolution / 2.0;
+        worldPath.emplace_back(wx, wy);
+        RCLCPP_INFO(this->get_logger(), "world path x: %.2f, y: %.2f", wx, wy);
+    }
+    AstarPlanner::saveGridAsImage(binaryGrid, "Binary Grid", gridPath);
 }
 
-
-// currently image is flipped in the x and y axis. 
-void AstarPlanner::saveGridAsImage(const std::vector<std::vector<int>> &grid, const std::string &filename, const std::vector<Point*>& path)
+// currently image is flipped in the x and y axis.
+void AstarPlanner::saveGridAsImage(const std::vector<std::vector<int>> &grid, const std::string &filename, const std::vector<Point *> &path)
 {
     RCLCPP_INFO(this->get_logger(), "image creating");
     int height = grid.size();
     int width = grid[0].size();
-    
-    // create an image in colour scale 
+
+    // create an image in colour scale
     cv::Mat image(height, width, CV_8UC3);
 
     cv::circle(image, cv::Point(0, 0), 3, cv::Scalar(255, 255, 0), -1); // Cyan dot for origin
@@ -98,19 +108,22 @@ void AstarPlanner::saveGridAsImage(const std::vector<std::vector<int>> &grid, co
     {
         for (int x = 0; x < width; ++x)
         {
-            if (grid[y][x]) {
+            if (grid[y][x])
+            {
                 // Obstacle (black)
                 image.at<cv::Vec3b>(y, x) = cv::Vec3b(0, 0, 0); // Black for obstacles
-            } else {
+            }
+            else
+            {
                 // Free space (white)
                 image.at<cv::Vec3b>(y, x) = cv::Vec3b(255, 255, 255); // White for free space
             }
         }
     }
-    for (const auto& point : path)
+    for (const auto &point : path)
     {
         RCLCPP_INFO(this->get_logger(), "Path point x: %d, Path point y: %d", point->x, point->y);
-        image.at<cv::Vec3b>(point->y, point->x) = cv::Vec3b(0, 0, 255);  // Red (BGR format)
+        image.at<cv::Vec3b>(point->y, point->x) = cv::Vec3b(0, 0, 255); // Red (BGR format)
     }
     // // Draw start position in GREEN
     // cv::circle(image, cv::Point(startX, startY), 3, cv::Scalar(0, 255, 0), -1);
@@ -119,7 +132,9 @@ void AstarPlanner::saveGridAsImage(const std::vector<std::vector<int>> &grid, co
     // cv::circle(image, cv::Point(goalX, goalY), 3, cv::Scalar(0, 0, 255), -1);
     RCLCPP_INFO(this->get_logger(), "image saved");
     std::string filePath = filename + ".png";
-    cv::imwrite(filePath, image);
+    cv::Mat rotated;
+    cv::flip(image, rotated, -1); // Rotate 180°
+    cv::imwrite(filePath, rotated);
 }
 
 // Impliment A* algorithim. Take an initial start X and Y positon, a goal X and Y Position and a map
@@ -149,9 +164,17 @@ std::vector<AstarPlanner::Point *> AstarPlanner::aStarSearch(double startX, doub
     Point *start = new Point(gridStartX, gridStartY, 0, eclidDist(gridStartX, gridStartY, gridGoalX, gridGoalY));
     openList.push(start);
 
-    // Define the movements allowed, I.E. up down left and right.
-    // This can be modified if more dirrections are required, I.E diagonal - if the resolution gets big enough, maybe this can be variable?
-    std::vector<std::pair<int, int>> directions = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
+    // Define the movements allowed, I.E. up down left and right and diagonals.
+    std::vector<std::pair<int, int>> directions = {
+        {0, 1},   // up
+        {1, 0},   // right
+        {0, -1},  // down
+        {-1, 0},  // left
+        {1, 1},   // top-right
+        {1, -1},  // bottom-right
+        {-1, -1}, // bottom-left
+        {-1, 1}   // top-left
+    };
 
     // Start the A* loop, this will continue to run while there is nodes in the priority queue, as the initial node was pushed back above
     while (!openList.empty())
@@ -188,10 +211,19 @@ std::vector<AstarPlanner::Point *> AstarPlanner::aStarSearch(double startX, doub
             // Check if the neighbour node is valid I.E within the bounds of the world and not an obstacle
             if (nx >= 0 && ny >= 0 && ny < static_cast<int>(grid.size()) && nx < static_cast<int>(grid[0].size()) && grid[ny][nx] == 0)
             {
+                if (dx != 0 && dy != 0)
+                {
+                    if (grid[current->y][current->x + dx] != 0 || grid[current->y + dy][current->x] != 0)
+                    {
+                        continue; // Don't allow diagonal if either adjacent cardinal cell is an obstacle
+                    }
+                }
                 int neighborKey = ny * width + nx;
                 if (!visited.count(neighborKey))
                 {
-                    float newCost = current->cost + 1;
+                    // cost to move, regualr left right up and down cost 1, diagonals as they are a further away cost 1.14
+                    float moveCost = (dx == 0 || dy == 0) ? 1.0f : std::sqrt(2.0f);
+                    float newCost = current->cost + moveCost;
                     Point *neighbor = new Point(nx, ny, newCost, eclidDist(nx, ny, gridGoalX, gridGoalY), current);
                     RCLCPP_ERROR(this->get_logger(), "Bad Node");
                     openList.push(neighbor);

@@ -1,3 +1,4 @@
+how to run path_planner
 Notes:
 - run all of this in your ros2_ws
 
@@ -20,6 +21,18 @@ Terminal 3:
 - to return to home, write "return to home"
 - to get the current position, write "position"
 
+How to run astar_planner
+
+Termianl 1:
+colcon build --packages-select andy
+ros2 run andy astar_planner
+
+Terminal 2: 
+export TURTLEBOT3_MODEL=waffle_pi
+ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=true
+- Localise the turtlebot in RViz using the 2DPoseEstimate thing, then minimise window
+
+this will then export an image to the ros2 workspace which you can open and view. 
 
 
 To run through the real robot, follow this guide:https://canvas.uts.edu.au/courses/34276/pages/turtlebots-new-getting-started-ros-1-and-ros-2?module_item_id=2133795
@@ -27,4 +40,3 @@ Make sure to have an Rviz open, but not gazebo. Gazebo is now replaced by the re
 
 Useful information about A* program: https://chatgpt.com/share/67ecab6e-ce20-8005-83ab-dd81b5d0d612
 
-ros2 run nav2_map_server map_server --ros-args -p yaml_filename:=/home/andrew/ros2_ws/src/turtlebot3/turtlebot3_navigation2/map/map.yaml
