@@ -32,3 +32,9 @@ this is the Ros2 node name and what needs to be called by other nodes.
 TOPIC NAME
 this is the /initialpose which is published.
 note: with the current code we just publish a known starting position to the topic to initialise
+
+OpenCV Testing
+https://chatgpt.com/share/68073b60-c720-800d-ae9b-3ce5694872ea
+the first section of this chat has the guide to install and test opencv
+note: need to be in ros2_ws/src/waitforme/tom/src to run
+
