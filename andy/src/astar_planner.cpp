@@ -57,13 +57,14 @@ void AstarPlanner::convertToBinaryGrid(const nav_msgs::msg::OccupancyGrid &map)
 {
     double startX = 0;
     double startY = 0.5;
-    double goalX = 0;
-    double goalY = -2;
+    double goalX = 2.5;
+    double goalY = 2.5;
     int width = map.info.width;
     int height = map.info.height;
     origin_x = map.info.origin.position.x;
     origin_y = map.info.origin.position.y;
     resolution = map.info.resolution;
+    RCLCPP_INFO(this->get_logger(), "Map width: %d, Map height: %d", map.info.width, map.info.height);
     RCLCPP_INFO(this->get_logger(), "origin x = %.2f, y = %.2f, resolution = %.2f", origin_x, origin_y, resolution);
     RCLCPP_INFO(this->get_logger(), "map data size = %zu", map.data.size());
     RCLCPP_INFO(this->get_logger(), "map width: %d map height: %d", width, height);
@@ -73,14 +74,15 @@ void AstarPlanner::convertToBinaryGrid(const nav_msgs::msg::OccupancyGrid &map)
     return;  // or handle this gracefully
 }
 
+
     RCLCPP_INFO(this->get_logger(), "0");
     std::vector<std::vector<int>> binaryGrid(height, std::vector<int>(width, 0));
     RCLCPP_INFO(this->get_logger(), "1");
     //change this from 70 to width
-    for (int x = 0; x < width; ++x)
+    for (int y = 0; y < height; ++y)
     {
         // change this from 70 to height
-        for (int y = 0; y < height; ++y)
+        for (int x = 0; x < width; ++x)
         {   
             RCLCPP_INFO(this->get_logger(), "x pos: %d y pos: %d", x, y);
             int index = y * width + x;
@@ -89,12 +91,12 @@ void AstarPlanner::convertToBinaryGrid(const nav_msgs::msg::OccupancyGrid &map)
             // Mark as 1 if occupied or unknown
             if (value == 100 || value == -1)
             {
-                binaryGrid[x][y] = 1;
+                binaryGrid[y][x] = 1;
                 //RCLCPP_INFO(this->get_logger(), "ocupied");
             }
             else
             {
-                binaryGrid[x][y] = 0;
+                binaryGrid[y][x] = 0;
                 //RCLCPP_INFO(this->get_logger(), "freespace");
             }
         }
@@ -246,7 +248,7 @@ std::vector<AstarPlanner::Point *> AstarPlanner::aStarSearch(double startX, doub
             std::vector<Point *> path;
             while (current)
             {
-                RCLCPP_INFO(this->get_logger(), "New Node");
+                //RCLCPP_INFO(this->get_logger(), "New Node");
                 path.push_back(current);
                 current = current->parent;
             }
@@ -274,7 +276,7 @@ std::vector<AstarPlanner::Point *> AstarPlanner::aStarSearch(double startX, doub
                     float moveCost = (dx == 0 || dy == 0) ? 1.0f : std::sqrt(2.0f);
                     float newCost = current->cost + moveCost;
                     Point *neighbor = new Point(nx, ny, newCost, eclidDist(nx, ny, gridGoalX, gridGoalY), current);
-                    RCLCPP_ERROR(this->get_logger(), "Bad Node");
+                    //RCLCPP_ERROR(this->get_logger(), "Bad Node");
                     openList.push(neighbor);
                 }
             }
