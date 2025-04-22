@@ -27,9 +27,9 @@ Termianl 1:
 colcon build --packages-select andy
 ros2 run andy astar_planner
 
-Terminal 2: 
+Terminal 2:     
 export TURTLEBOT3_MODEL=waffle_pi
-ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=true
+ros2 launch turtlebot3_navigation2 navigation2.launch.py map:=$HOME/ros2_ws/src/waitforme/GalleryMap.yaml
 - Localise the turtlebot in RViz using the 2DPoseEstimate thing, then minimise window
 
 this will then export an image to the ros2 workspace which you can open and view. 
