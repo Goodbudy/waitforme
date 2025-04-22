@@ -5,14 +5,14 @@
 int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
 
-    auto node1 = std::make_shared<rclcpp::Node>("bot1_node");
-    auto node2 = std::make_shared<rclcpp::Node>("bot2_node");
+    auto node1 = std::make_shared<rclcpp::Node>("tb3_1");
+    auto node2 = std::make_shared<rclcpp::Node>("tb3_2");
     // auto node3 = std::make_shared<rclcpp::Node>("bot3_node");
     // auto node4 = std::make_shared<rclcpp::Node>("bot4_node");
     // auto node5 = std::make_shared<rclcpp::Node>("bot5_node");
 
-    TurtleBot bot1("bot1", node1);
-    TurtleBot bot2("bot2", node2);
+    TurtleBot tb3_1("tb3_1", node1);
+    TurtleBot tb3_2("tb3_2", node2);
     // TurtleBot bot3("bot3", node3);
     // TurtleBot bot4("bot3", node4);
     // TurtleBot bot5("bot3", node5);
@@ -30,15 +30,15 @@ int main(int argc, char **argv) {
     // Simulate status updates (in real case these would be dynamic)
     rclcpp::Rate rate(1.0);
     while (rclcpp::ok()) {
-        bot1.setAtHome(true);
-        bot1.setDelivering(true);
-        bot1.setInProximity(true);
-        bot1.publishStatus();
+        tb3_1.setAtHome(true);
+        tb3_1.setDelivering(true);
+        tb3_1.setInProximity(true);
+        tb3_1.publishStatus();
 
-        bot2.setAtHome(false);
-        bot2.setDelivering(true);
-        bot2.setInProximity(true);
-        bot2.publishStatus();
+        tb3_2.setAtHome(false);
+        tb3_2.setDelivering(true);
+        tb3_2.setInProximity(true);
+        tb3_2.publishStatus();
 
         // bot3.setAtHome(false);
         // bot3.setDelivering(false);

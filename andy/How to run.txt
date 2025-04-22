@@ -1,18 +1,19 @@
+how to run path_planner
 Notes:
 - run all of this in your ros2_ws
 
 Terminal 1:
-- export TURTLEBOT3_MODEL=waffle_pi
-- ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
+export TURTLEBOT3_MODEL=waffle_pi
+ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py
 
 Terminal 2: 
-- export TURTLEBOT3_MODEL=waffle_pi
-- ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=true
+export TURTLEBOT3_MODEL=waffle_pi
+ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=true
 - Localise the turtlebot in RViz using the 2DPoseEstimate thing, then minimise window
 
 Terminal 3:
-- colcon build --packages-select andy
-- ros2 run andy path_planner
+colcon build --packages-select andy
+ros2 run andy path_planner
 
 Terminal 3:
 - Yes in terminal 3
@@ -20,9 +21,22 @@ Terminal 3:
 - to return to home, write "return to home"
 - to get the current position, write "position"
 
+How to run astar_planner
+
+Termianl 1:
+colcon build --packages-select andy
+ros2 run andy astar_planner
+
+Terminal 2: 
+export TURTLEBOT3_MODEL=waffle_pi
+ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=true
+- Localise the turtlebot in RViz using the 2DPoseEstimate thing, then minimise window
+
+this will then export an image to the ros2 workspace which you can open and view. 
 
 
 To run through the real robot, follow this guide:https://canvas.uts.edu.au/courses/34276/pages/turtlebots-new-getting-started-ros-1-and-ros-2?module_item_id=2133795
 Make sure to have an Rviz open, but not gazebo. Gazebo is now replaced by the real robot. 
 
 Useful information about A* program: https://chatgpt.com/share/67ecab6e-ce20-8005-83ab-dd81b5d0d612
+

@@ -2,8 +2,8 @@
 // #include <algorithm>
 
 // GoalManager::GoalManager() : Node("goal_manager_node") {
-//     bot = "bot1";
-//     //std::vector<std::string> bot_names = {"bot1", "bot2", "bot3"};
+//     bot = "tb3_1";
+//     //std::vector<std::string> bot_names = {"tb3_1", "tb3_2", "bot3"};
 //     create_status_subscribers(bot);
 
 
