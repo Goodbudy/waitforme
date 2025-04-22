@@ -27,3 +27,14 @@ Terminal 4:
 
 - "This one will execute the next goal in the list
 - ros2 service call /execute_goals issy/srv/ExecuteGoals "{}"
+
+
+
+
+
+To Do  
+- matrix for table goals values, make service better - one goal at a time send
+- make publisher for goal matrix
+- path planning - use anndys node for following path
+- localise like normal w nav2goal usually
+- 

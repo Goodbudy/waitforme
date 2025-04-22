@@ -10,6 +10,7 @@
 #include <queue>
 #include "issy/srv/add_goal.hpp"
 #include "issy/srv/execute_goals.hpp"
+#include "andy/src/astar_planner.hpp"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
