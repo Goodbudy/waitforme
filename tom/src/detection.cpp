@@ -2,7 +2,7 @@
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include <chrono>
 #include <thread>  
-
+/*
 class Detection : public rclcpp::NODE {
 public:
 Detection() : Node("detection") {
@@ -26,7 +26,7 @@ Mark on rviz what object is with identifier. eg square = artwork
 */
 
 
-}
+//}
 
 
 int main(int argc, char const *argv[])
