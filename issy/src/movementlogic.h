@@ -24,17 +24,21 @@ public:
 
     MovementLogic();
 
-private:
     rclcpp_action::Client<NavigateToPose>::SharedPtr client_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr odom_sub_;
     rclcpp::Service<issy::srv::AddGoal>::SharedPtr add_goal_service_;
     rclcpp::Service<issy::srv::ExecuteGoals>::SharedPtr execute_goals_service_;
+    rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
+
     double x_home, y_home;
     double tolerance;
     double current_x = 0.0, current_y = 0.0;
     std::queue<std::pair<double, double>> goal_queue;
     bool executing_goal;
     bool home_base_reached = false;
+    std::vector<geometry_msgs::msg::PoseStamped> path_;
+    size_t current_index_;
+    bool path_received_;
 
     void handle_add_goal(const std::shared_ptr<issy::srv::AddGoal::Request> request,
                           std::shared_ptr<issy::srv::AddGoal::Response> response);
@@ -48,6 +52,7 @@ private:
     void navigate_to_home_base();
     void odom_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void print_remaining_goals();
+    void pathCallback(const nav_msgs::msg::Path::SharedPtr msg);
 };
 
 #endif // MOVEMENTLOGIC_HPP

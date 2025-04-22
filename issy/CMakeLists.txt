@@ -9,7 +9,6 @@ find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-find_package(andy REQUIRED)
 
 # Service files
 rosidl_generate_interfaces(${PROJECT_NAME}
@@ -24,7 +23,6 @@ ament_target_dependencies(movementlogic
   rclcpp_action
   geometry_msgs
   std_msgs
-  andy
 )
 
 # Link generated services
