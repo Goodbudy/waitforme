@@ -1,20 +1,39 @@
-// detection.h
-#pragma once
+#ifndef DETECTION_H
+#define DETECTION_H
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
-#include <geometry_msgs/msg/pose2_d.hpp>
-#include <opencv2/opencv.hpp>
+#include <geometry_msgs/msg/point.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <visualization_msgs/msg/marker.hpp>
+#include <vector>
 
-class ObjectDetector : public rclcpp::Node {
+class ObjDetect : public rclcpp::Node
+{
 public:
-    ObjectDetector();
+    ObjDetect();
 
 private:
-    void scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg);
-    void processScan(const sensor_msgs::msg::LaserScan::SharedPtr msg);
-    void detectShapes(const cv::Mat &image);
-
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scan_sub_;
-    rclcpp::Publisher<geometry_msgs::msg::Pose2D>::SharedPtr object_pub_;
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
+
+    nav_msgs::msg::Odometry currentOdom;
+    bool firstCent;
+    std::vector<geometry_msgs::msg::Point> centres;
+    int ct_;
+
+    void scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan);
+    void odomCallback(const nav_msgs::msg::Odometry::SharedPtr odom);
+    std::vector<std::vector<geometry_msgs::msg::Point>> countSegments(const sensor_msgs::msg::LaserScan::SharedPtr scan);
+    void detectCylinder(const std::vector<geometry_msgs::msg::Point> &segment);
+    geometry_msgs::msg::Point findCentre(geometry_msgs::msg::Point P1, geometry_msgs::msg::Point P2, double r);
+    bool checkExisting(geometry_msgs::msg::Point centre);
+    void visualizeSegment(const std::vector<geometry_msgs::msg::Point> &segment);
+    visualization_msgs::msg::Marker produceMarkerCylinder(geometry_msgs::msg::Point pt);
+    geometry_msgs::msg::Point localToGlobal(const nav_msgs::msg::Odometry &global, const geometry_msgs::msg::Point &local);
+    bool isThisAWall(const std::vector<geometry_msgs::msg::Point> &segment);
+    bool isThisACorner(const std::vector<geometry_msgs::msg::Point> &segment);
 };
+
+#endif // DETECTION_H

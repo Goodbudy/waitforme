@@ -12,8 +12,10 @@ Terminal 2- launch map (aka: rviz nav2 map thingy)
 export TURTLEBOT3_MODEL=waffle_pi
 ros2 launch turtlebot3_navigation2 navigation2.launch.py use_sim_time:=True map:=$HOME/ros2_ws/src/waitforme/tom/turtle_map2.yaml
 
-Terminal 3- Run node
+Terminal 3+ - Run node
 ros2 run tom localisation_node
+(next Terminal)
+ros2 run tom detection_node
 
 
 ok now for me to explain to myself how and where and why this all works

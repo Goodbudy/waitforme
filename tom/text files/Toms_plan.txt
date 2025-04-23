@@ -9,10 +9,11 @@ this will be a neural network, which i have fed data so it can hopefully recogni
 
 
 New To Do 
-1. Object recognition - Using OpenCV to recognise objects and publish positions and size. (Issy RS1 sprint 3.6)
+1. Object recognition - recognise objects and publish positions and size. (Issy RS1 sprint 3.6)
 2. Localisation - be able to publish a point to the robot
 3. Localisation2 - localise from lidar data (Issy RS1 code?)
-4. get it to figure out where the other turtlebot is and how it's moving (more coding)
+4. get it to figure out where the other turtlebot is and how it's moving (more coding/ OpenCV?)
 5. Can use libraries but to use deep learning to predict what objects are. use SVM. https://scikit-learn.org/stable/modules/svm.html
 this will be a neural network, which i have fed data so it can hopefully recognise differnet objects
 
+Note: OpenCV is only useful when using camera data, not for Lidar, hence not used for credit. Maybe distinction/HD?
