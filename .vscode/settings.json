@@ -1,3 +1,6 @@
 {
-    "cmake.sourceDirectory": "/home/thomas/ros2_ws/src/waitforme/Tom"
+    "cmake.sourceDirectory": "/home/thomas/ros2_ws/src/waitforme/Tom",
+    "files.associations": {
+        "iostream": "cpp"
+    }
 }
