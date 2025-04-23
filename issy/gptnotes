@@ -1,0 +1,320 @@
+// movementlogic.cpp
+#include <rclcpp/rclcpp.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <nav_msgs/msg/path.hpp>
+#include <geometry_msgs/msg/twist.hpp>
+#include "issy/srv/add_goal.hpp"
+#include "issy/srv/execute_goals.hpp"
+#include <queue>
+#include <vector>
+#include <functional>
+#include <chrono>
+#include <cmath>
+
+enum class State { HOMING, IDLE, EXEC_GOAL_PATH, WAITING_AT_GOAL, RETURNING_HOME_PATH };
+
+class MovementLogic : public rclcpp::Node {
+public:
+    MovementLogic()
+        : Node("movementlogic"),
+          x_home_(3.5),
+          y_home_(3.2),
+          tolerance_(0.2),
+          state_(State::HOMING),
+          current_target_idx_(0)
+    {
+        // Publishers
+        goal_pub_ = create_publisher<geometry_msgs::msg::PoseStamped>("astar_goal", 10);
+        cmd_vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
+
+        // Subscriptions
+        path_sub_ = create_subscription<nav_msgs::msg::Path>(
+            "planned_path", 10, std::bind(&MovementLogic::pathCallback, this, std::placeholders::_1));
+        odom_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
+            "odom", 10, std::bind(&MovementLogic::odomCallback, this, std::placeholders::_1));
+
+        // Services
+        add_goal_srv_ = create_service<issy::srv::AddGoal>(
+            "add_goal", std::bind(&MovementLogic::handleAddGoal, this, std::placeholders::_1, std::placeholders::_2));
+        exec_goals_srv_ = create_service<issy::srv::ExecuteGoals>(
+            "execute_goals", std::bind(&MovementLogic::handleExecuteGoals, this, std::placeholders::_1, std::placeholders::_2));
+
+        // Timer for path following
+        follow_timer_ = create_wall_timer(
+            std::chrono::milliseconds(100), std::bind(&MovementLogic::followPath, this));
+
+        // Start by homing
+        RCLCPP_INFO(get_logger(), "Startup: homing to (%.2f, %.2f)", x_home_, y_home_);
+        publishGoal(x_home_, y_home_);
+    }
+
+private:
+    // ROS interfaces
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr goal_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
+    rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr odom_sub_;
+    rclcpp::Service<issy::srv::AddGoal>::SharedPtr add_goal_srv_;
+    rclcpp::Service<issy::srv::ExecuteGoals>::SharedPtr exec_goals_srv_;
+    rclcpp::TimerBase::SharedPtr follow_timer_;
+    rclcpp::TimerBase::SharedPtr wait_timer_;
+
+    // State
+    double x_home_, y_home_, tolerance_;
+    State state_;
+    std::queue<std::pair<double, double>> goal_queue_;
+    std::vector<geometry_msgs::msg::PoseStamped> path_;
+    size_t current_target_idx_;
+    double current_x_{0.0}, current_y_{0.0};
+
+    void publishGoal(double x, double y) {
+        geometry_msgs::msg::PoseStamped msg;
+        msg.header.frame_id = "map";
+        msg.header.stamp = now();
+        msg.pose.position.x = x;
+        msg.pose.position.y = y;
+        msg.pose.orientation.w = 1.0;
+        goal_pub_->publish(msg);
+    }
+
+    void pathCallback(const nav_msgs::msg::Path::SharedPtr msg) {
+        if (msg->poses.empty()) {
+            RCLCPP_WARN(get_logger(), "Received empty path");
+            return;
+        }
+        path_ = msg->poses;
+        current_target_idx_ = 0;
+        RCLCPP_INFO(get_logger(), "Received path with %zu points", path_.size());
+    }
+
+    void odomCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+        current_x_ = msg->pose.position.x;
+        current_y_ = msg->pose.position.y;
+    }
+
+    void followPath() {
+        if (current_target_idx_ >= path_.size()) return;
+        auto &target = path_[current_target_idx_].pose;
+        double dx = target.position.x - current_x_;
+        double dy = target.position.y - current_y_;
+        double dist = std::sqrt(dx * dx + dy * dy);
+
+        if (dist < tolerance_) {
+            current_target_idx_++;
+            if (current_target_idx_ >= path_.size()) {
+                RCLCPP_INFO(get_logger(), "Path complete in state=%d", static_cast<int>(state_));
+                onPathComplete();
+            }
+            return;
+        }
+
+        geometry_msgs::msg::Twist cmd;
+        cmd.linear.x = 0.5 * dist;
+        cmd.angular.z = std::atan2(dy, dx);
+        cmd_vel_pub_->publish(cmd);
+    }
+
+    void onPathComplete() {
+        switch (state_) {
+            case State::HOMING:
+                RCLCPP_INFO(get_logger(), "Home base reached");
+                state_ = State::IDLE;
+                break;
+            case State::EXEC_GOAL_PATH:
+                RCLCPP_INFO(get_logger(), "Goal reached, waiting 5s");
+                state_ = State::WAITING_AT_GOAL;
+                wait_timer_ = create_wall_timer(
+                    std::chrono::seconds(5), std::bind(&MovementLogic::onWaitComplete, this), true);
+                break;
+            case State::RETURNING_HOME_PATH:
+                RCLCPP_INFO(get_logger(), "Returned home from goal");
+                if (!goal_queue_.empty()) {
+                    state_ = State::EXEC_GOAL_PATH;
+                    auto [x,y] = goal_queue_.front();
+                    goal_queue_.pop();
+                    publishGoal(x,y);
+                    RCLCPP_INFO(get_logger(), "Next goal published: (%.2f, %.2f)", x, y);
+                } else {
+                    state_ = State::IDLE;
+                    RCLCPP_INFO(get_logger(), "All goals complete, idle");
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    void onWaitComplete() {
+        RCLCPP_INFO(get_logger(), "Wait complete, returning home");
+        state_ = State::RETURNING_HOME_PATH;
+        publishGoal(x_home_, y_home_);
+    }
+
+    void handleAddGoal(const std::shared_ptr<issy::srv::AddGoal::Request> req,
+                       std::shared_ptr<issy::srv::AddGoal::Response> res) {
+        goal_queue_.emplace(req->x, req->y);
+        res->success = true;
+        res->message = "Goal added";
+        RCLCPP_INFO(get_logger(), "Added goal: (%.2f, %.2f)", req->x, req->y);
+    }
+
+    void handleExecuteGoals(const std::shared_ptr<issy::srv::ExecuteGoals::Request>,
+                            std::shared_ptr<issy::srv::ExecuteGoals::Response> res) {
+        if (state_ == State::IDLE && !goal_queue_.empty()) {
+            state_ = State::EXEC_GOAL_PATH;
+            auto [x,y] = goal_queue_.front();
+            goal_queue_.pop();
+            publishGoal(x,y);
+            res->success = true;
+            res->message = "Executing goal";
+            RCLCPP_INFO(get_logger(), "Executing goal: (%.2f, %.2f)", x, y);
+        } else {
+            res->success = false;
+            res->message = "Cannot execute goals in current state";
+        }
+    }
+};
+
+int main(int argc, char **argv) {
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<MovementLogic>());
+    rclcpp::shutdown();
+    return 0;
+}
+
+
+// astarplanner.cpp
+#include <rclcpp/rclcpp.hpp>
+#include <nav_msgs/msg/occupancy_grid.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <nav_msgs/msg/path.hpp>
+#include <opencv2/opencv.hpp>
+#include <vector>
+#include <queue>
+#include <unordered_map>
+#include <cmath>
+
+class AstarPlanner : public rclcpp::Node {
+public:
+    AstarPlanner()
+        : Node("astarplanner"), map_ready_(false), current_x_(0.0), current_y_(0.0) {
+        map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
+            "map", 10, std::bind(&AstarPlanner::mapCallback, this, std::placeholders::_1));
+        odom_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
+            "odom", 10, std::bind(&AstarPlanner::odomCallback, this, std::placeholders::_1));
+        goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
+            "astar_goal", 10, std::bind(&AstarPlanner::goalCallback, this, std::placeholders::_1));
+        path_pub_ = create_publisher<nav_msgs::msg::Path>("planned_path", 10);
+        RCLCPP_INFO(get_logger(), "AstarPlanner node started");
+    }
+
+private:
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr odom_sub_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
+    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
+
+    std::vector<std::vector<int>> grid_;
+    double origin_x_, origin_y_, resolution_;
+    size_t width_, height_;
+    bool map_ready_;
+    double current_x_, current_y_;
+
+    struct Point {
+        int x, y;
+        float cost, heuristic;
+        Point *parent;
+        Point(int x,int y,float cost,float heuristic,Point* parent=nullptr)
+            : x(x), y(y), cost(cost), heuristic(heuristic), parent(parent) {}
+        float totalCost() const { return cost + heuristic; }
+    };
+
+    struct ComparePoint { bool operator()(Point* a, Point* b) const { return a->totalCost() > b->totalCost(); }};
+
+    float euclidDist(int x1,int y1,int x2,int y2) { return std::hypot(x2-x1, y2-y1); }
+
+    void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
+        width_ = msg->info.width;
+        height_ = msg->info.height;
+        origin_x_ = msg->info.origin.position.x;
+        origin_y_ = msg->info.origin.position.y;
+        resolution_ = msg->info.resolution;
+        grid_.assign(height_, std::vector<int>(width_,0));
+        for(size_t y=0; y<height_; ++y){
+            for(size_t x=0; x<width_; ++x){
+                int idx = y*width_ + x;
+                int val = msg->data[idx];
+                grid_[y][x] = (val==100||val==-1)?1:0;
+            }
+        }
+        map_ready_ = true;
+        RCLCPP_INFO(get_logger(), "Map received: %zux%zu", width_, height_);
+    }
+
+    void odomCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+        current_x_ = msg->pose.position.x;
+        current_y_ = msg->pose.position.y;
+    }
+
+    void goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+        if(!map_ready_) { RCLCPP_WARN(get_logger(), "Map not ready, cannot plan"); return; }
+        double gx = msg->pose.position.x;
+        double gy = msg->pose.position.y;
+        RCLCPP_INFO(get_logger(), "Planning path from (%.2f,%.2f) to (%.2f,%.2f)", current_x_, current_y_, gx, gy);
+        auto gridPath = aStarSearch(current_x_, current_y_, gx, gy);
+        auto worldPath = convertGridToWorld(gridPath);
+        publishPath(worldPath);
+    }
+
+    std::vector<Point*> aStarSearch(double sx_d,double sy_d,double gx_d,double gy_d) {
+        int sx = (sx_d - origin_x_) / resolution_;
+        int sy = (sy_d - origin_y_) / resolution_;
+        int gx = (gx_d - origin_x_) / resolution_;
+        int gy = (gy_d - origin_y_) / resolution_;
+        std::priority_queue<Point*,std::vector<Point*>,ComparePoint> open;
+        std::unordered_map<int,Point*> visited;
+        open.push(new Point(sx,sy,0.0f,euclidDist(sx,sy,gx,gy)));
+        int dirs[8][2] = {{0,1},{1,0},{0,-1},{-1,0},{1,1},{1,-1},{-1,-1},{-1,1}};
+        while(!open.empty()){ auto cur = open.top(); open.pop(); int key = cur->y*width_+cur->x;
+            if(visited.count(key)) continue;
+            visited[key]=cur;
+            if(cur->x==gx && cur->y==gy){
+                std::vector<Point*> path;
+                while(cur){ path.push_back(cur); cur = cur->parent; }
+                return path;
+            }
+            for(auto &d:dirs){ int nx=cur->x+d[0], ny=cur->y+d[1];
+                if(nx>=0&&ny>=0&&nx<(int)width_&&ny<(int)height_&&grid_[ny][nx]==0){
+                    if(d[0]!=0&&d[1]!=0){ if(grid_[cur->y][cur->x+d[0]]||grid_[cur->y+d[1]][cur->x]) continue; }
+                    int nkey=ny*width_+nx;
+                    if(!visited.count(nkey)){
+                        float cost = cur->cost + ((d[0]==0||d[1]==0)?1.0f:std::sqrt(2.0f));
+                        open.push(new Point(nx,ny,cost,euclidDist(nx,ny,gx,gy),cur));
+                    }
+                }
+            }
+        }
+        return {};
+    }
+
+    std::vector<std::pair<double,double>> convertGridToWorld(const std::vector<Point*>& gp) {
+        std::vector<std::pair<double,double>> wp;
+        for(auto p:gp){ double wx=p->x*resolution_+origin_x_+resolution_/2; double wy=p->y*resolution_+origin_y_+resolution_/2; wp.emplace_back(wx,wy); }
+        return wp;
+    }
+
+    void publishPath(const std::vector<std::pair<double,double>>& wp) {
+        nav_msgs::msg::Path msg;
+        msg.header.stamp = now(); msg.header.frame_id = "map";
+        for(auto [x,y]:wp){ geometry_msgs::msg::PoseStamped ps; ps.header=msg.header; ps.pose.position.x=x; ps.pose.position.y=y; ps.pose.orientation.w=1.0; msg.poses.push_back(ps);}        
+        path_pub_->publish(msg);
+        RCLCPP_INFO(get_logger(), "Published path with %zu points", msg.poses.size());
+    }
+};
+
+int main(int argc, char **argv) {
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<AstarPlanner>());
+    rclcpp::shutdown();
+    return 0;
+}
