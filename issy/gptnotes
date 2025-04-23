@@ -1,3 +1,4 @@
+// movementlogic.cpp
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/path.hpp>
@@ -123,7 +124,7 @@ private:
                 RCLCPP_INFO(get_logger(), "Goal reached, waiting 5s");
                 state_ = State::WAITING_AT_GOAL;
                 wait_timer_ = create_wall_timer(
-                    std::chrono::seconds(5), std::bind(&MovementLogic::onWaitComplete, this));
+                    std::chrono::seconds(5), std::bind(&MovementLogic::onWaitComplete, this), true);
                 break;
             case State::RETURNING_HOME_PATH:
                 RCLCPP_INFO(get_logger(), "Returned home from goal");
@@ -182,158 +183,138 @@ int main(int argc, char **argv) {
 }
 
 
+// astarplanner.cpp
+#include <rclcpp/rclcpp.hpp>
+#include <nav_msgs/msg/occupancy_grid.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <nav_msgs/msg/path.hpp>
+#include <opencv2/opencv.hpp>
+#include <vector>
+#include <queue>
+#include <unordered_map>
+#include <cmath>
 
+class AstarPlanner : public rclcpp::Node {
+public:
+    AstarPlanner()
+        : Node("astarplanner"), map_ready_(false), current_x_(0.0), current_y_(0.0) {
+        map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
+            "map", 10, std::bind(&AstarPlanner::mapCallback, this, std::placeholders::_1));
+        odom_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
+            "odom", 10, std::bind(&AstarPlanner::odomCallback, this, std::placeholders::_1));
+        goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
+            "astar_goal", 10, std::bind(&AstarPlanner::goalCallback, this, std::placeholders::_1));
+        path_pub_ = create_publisher<nav_msgs::msg::Path>("planned_path", 10);
+        RCLCPP_INFO(get_logger(), "AstarPlanner node started");
+    }
 
-// #include "rclcpp/rclcpp.hpp"
-// #include "geometry_msgs/msg/pose_stamped.hpp"
-// #include "nav2_msgs/action/navigate_to_pose.hpp"
-// #include "rclcpp_action/rclcpp_action.hpp"
-// #include <iostream>
-// #include <string>
-// #include <thread>
-// #include <chrono>
-// #include <cmath>
-// #include <queue>
-// #include "issy/srv/add_goal.hpp"
-// #include "issy/srv/execute_goals.hpp"
+private:
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr odom_sub_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
+    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
 
-// using std::placeholders::_1;
-// using std::placeholders::_2;
+    std::vector<std::vector<int>> grid_;
+    double origin_x_, origin_y_, resolution_;
+    size_t width_, height_;
+    bool map_ready_;
+    double current_x_, current_y_;
 
-// class MovementLogic : public rclcpp::Node {
-// public:
-//     using NavigateToPose = nav2_msgs::action::NavigateToPose;
-//     using GoalHandleNav = rclcpp_action::ClientGoalHandle<NavigateToPose>;
+    struct Point {
+        int x, y;
+        float cost, heuristic;
+        Point *parent;
+        Point(int x,int y,float cost,float heuristic,Point* parent=nullptr)
+            : x(x), y(y), cost(cost), heuristic(heuristic), parent(parent) {}
+        float totalCost() const { return cost + heuristic; }
+    };
 
-//     MovementLogic() : Node("movementlogic"), x_home(3.5), y_home(3.2), tolerance(0.2), executing_goal(false) {
-//         client_ = rclcpp_action::create_client<NavigateToPose>(this, "navigate_to_pose");
+    struct ComparePoint { bool operator()(Point* a, Point* b) const { return a->totalCost() > b->totalCost(); }};
 
-//         // Wait for the action server to become available
-//         while (!client_->wait_for_action_server(std::chrono::seconds(1))) {
-//             RCLCPP_INFO(this->get_logger(), "Waiting for action server...");
-//         }
+    float euclidDist(int x1,int y1,int x2,int y2) { return std::hypot(x2-x1, y2-y1); }
 
-//         // Subscribe to Odometry Data
-//         odom_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-//             "/odom", 10, std::bind(&MovementLogic::odom_callback, this, std::placeholders::_1));
+    void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
+        width_ = msg->info.width;
+        height_ = msg->info.height;
+        origin_x_ = msg->info.origin.position.x;
+        origin_y_ = msg->info.origin.position.y;
+        resolution_ = msg->info.resolution;
+        grid_.assign(height_, std::vector<int>(width_,0));
+        for(size_t y=0; y<height_; ++y){
+            for(size_t x=0; x<width_; ++x){
+                int idx = y*width_ + x;
+                int val = msg->data[idx];
+                grid_[y][x] = (val==100||val==-1)?1:0;
+            }
+        }
+        map_ready_ = true;
+        RCLCPP_INFO(get_logger(), "Map received: %zux%zu", width_, height_);
+    }
 
-//         // Initiate movement to home base as soon as the node starts
-//         RCLCPP_INFO(this->get_logger(), "Navigating to home base...");
-//         navigate_to_home_base();
+    void odomCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+        current_x_ = msg->pose.position.x;
+        current_y_ = msg->pose.position.y;
+    }
 
-//         // Start the services
-//         add_goal_service_ = this->create_service<issy::srv::AddGoal>(
-//             "add_goal", std::bind(&MovementLogic::handle_add_goal, this, _1, _2));
+    void goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+        if(!map_ready_) { RCLCPP_WARN(get_logger(), "Map not ready, cannot plan"); return; }
+        double gx = msg->pose.position.x;
+        double gy = msg->pose.position.y;
+        RCLCPP_INFO(get_logger(), "Planning path from (%.2f,%.2f) to (%.2f,%.2f)", current_x_, current_y_, gx, gy);
+        auto gridPath = aStarSearch(current_x_, current_y_, gx, gy);
+        auto worldPath = convertGridToWorld(gridPath);
+        publishPath(worldPath);
+    }
 
-//         execute_goals_service_ = this->create_service<issy::srv::ExecuteGoals>(
-//             "execute_goals", std::bind(&MovementLogic::handle_execute_goals, this, _1, _2));   
+    std::vector<Point*> aStarSearch(double sx_d,double sy_d,double gx_d,double gy_d) {
+        int sx = (sx_d - origin_x_) / resolution_;
+        int sy = (sy_d - origin_y_) / resolution_;
+        int gx = (gx_d - origin_x_) / resolution_;
+        int gy = (gy_d - origin_y_) / resolution_;
+        std::priority_queue<Point*,std::vector<Point*>,ComparePoint> open;
+        std::unordered_map<int,Point*> visited;
+        open.push(new Point(sx,sy,0.0f,euclidDist(sx,sy,gx,gy)));
+        int dirs[8][2] = {{0,1},{1,0},{0,-1},{-1,0},{1,1},{1,-1},{-1,-1},{-1,1}};
+        while(!open.empty()){ auto cur = open.top(); open.pop(); int key = cur->y*width_+cur->x;
+            if(visited.count(key)) continue;
+            visited[key]=cur;
+            if(cur->x==gx && cur->y==gy){
+                std::vector<Point*> path;
+                while(cur){ path.push_back(cur); cur = cur->parent; }
+                return path;
+            }
+            for(auto &d:dirs){ int nx=cur->x+d[0], ny=cur->y+d[1];
+                if(nx>=0&&ny>=0&&nx<(int)width_&&ny<(int)height_&&grid_[ny][nx]==0){
+                    if(d[0]!=0&&d[1]!=0){ if(grid_[cur->y][cur->x+d[0]]||grid_[cur->y+d[1]][cur->x]) continue; }
+                    int nkey=ny*width_+nx;
+                    if(!visited.count(nkey)){
+                        float cost = cur->cost + ((d[0]==0||d[1]==0)?1.0f:std::sqrt(2.0f));
+                        open.push(new Point(nx,ny,cost,euclidDist(nx,ny,gx,gy),cur));
+                    }
+                }
+            }
+        }
+        return {};
+    }
 
-//     }
+    std::vector<std::pair<double,double>> convertGridToWorld(const std::vector<Point*>& gp) {
+        std::vector<std::pair<double,double>> wp;
+        for(auto p:gp){ double wx=p->x*resolution_+origin_x_+resolution_/2; double wy=p->y*resolution_+origin_y_+resolution_/2; wp.emplace_back(wx,wy); }
+        return wp;
+    }
 
-// private:
-//     rclcpp_action::Client<NavigateToPose>::SharedPtr client_;
-//     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr odom_sub_;
-//     rclcpp::Service<issy::srv::AddGoal>::SharedPtr add_goal_service_;
-//     rclcpp::Service<issy::srv::ExecuteGoals>::SharedPtr execute_goals_service_;
-    
-//     double x_home, y_home;
-//     double tolerance;
-//     double current_x = 0.0, current_y = 0.0;
-//     std::queue<std::pair<double, double>> goal_queue;
-//     bool executing_goal;
-//     bool home_base_reached = false;
+    void publishPath(const std::vector<std::pair<double,double>>& wp) {
+        nav_msgs::msg::Path msg;
+        msg.header.stamp = now(); msg.header.frame_id = "map";
+        for(auto [x,y]:wp){ geometry_msgs::msg::PoseStamped ps; ps.header=msg.header; ps.pose.position.x=x; ps.pose.position.y=y; ps.pose.orientation.w=1.0; msg.poses.push_back(ps);}        
+        path_pub_->publish(msg);
+        RCLCPP_INFO(get_logger(), "Published path with %zu points", msg.poses.size());
+    }
+};
 
-//     void handle_add_goal(const std::shared_ptr<issy::srv::AddGoal::Request> request,
-//         std::shared_ptr<issy::srv::AddGoal::Response> response) {
-//         goal_queue.push({request->x, request->y});
-//         response->success = true;
-//         response->message = "Goal added successfully.";
-//         RCLCPP_INFO(this->get_logger(), "Service: Added goal x=%.2f, y=%.2f", request->x, request->y);
-//     }
-
-//     void handle_execute_goals(const std::shared_ptr<issy::srv::ExecuteGoals::Request> /*request*/,
-//              std::shared_ptr<issy::srv::ExecuteGoals::Response> response) {
-//         if (!executing_goal && home_base_reached) {
-//             executing_goal = true;
-//             execute_next_goal();
-//             response->success = true;
-//             response->message = "Executing next goal.";
-//         } else {
-//             response->success = false;
-//             response->message = "Already executing or home base not yet reached.";
-//         }
-//     }
-
-//     void execute_next_goal() {
-//         if (!goal_queue.empty()) {
-//             auto [x_goal, y_goal] = goal_queue.front();
-//             goal_queue.pop();
-//             navigate_to(x_goal, y_goal, [this]() {
-//                 RCLCPP_INFO(this->get_logger(), "Arrived at goal! Starting 5s countdown...");
-//                 for (int i = 5; i > 0; --i) {
-//                     RCLCPP_INFO(this->get_logger(), "Waiting... %d seconds left", i);
-//                     std::this_thread::sleep_for(std::chrono::seconds(1));
-//                 }
-//                 RCLCPP_INFO(this->get_logger(), "Countdown complete! Returning to home base...");
-//                 navigate_to_home_base();
-//             });
-//         } else {
-//             RCLCPP_INFO(this->get_logger(), "No goals in the queue.");
-//             executing_goal = false;
-//         }
-//     }
-
-//     void navigate_to(double x, double y, std::function<void()> on_success) {
-//         auto goal_msg = NavigateToPose::Goal();
-//         goal_msg.pose.header.frame_id = "map";
-//         goal_msg.pose.header.stamp = this->now();
-//         goal_msg.pose.pose.position.x = x;
-//         goal_msg.pose.pose.position.y = y;
-//         goal_msg.pose.pose.orientation.w = 1.0;
-
-//         auto send_goal_options = rclcpp_action::Client<NavigateToPose>::SendGoalOptions();
-//         send_goal_options.result_callback = [this, on_success](const GoalHandleNav::WrappedResult & result) {
-//             if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
-//                 RCLCPP_INFO(this->get_logger(), "Navigation successful!");
-//                 on_success();
-//             }
-//         };
-
-//         client_->async_send_goal(goal_msg, send_goal_options);
-//     }
-
-//     void navigate_to_home_base() {
-//         navigate_to(x_home, y_home, [this]() {
-//             RCLCPP_INFO(this->get_logger(), "Returned to home base.");
-//             home_base_reached = true; // Mark home base as reached
-//             executing_goal = false;
-//             print_remaining_goals();
-//         });
-//     }
-
-//     void odom_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-//         current_x = msg->pose.position.x;
-//         current_y = msg->pose.position.y;
-//     }
-
-//     void print_remaining_goals() {
-//         if (goal_queue.empty()) {
-//             RCLCPP_INFO(this->get_logger(), "Goal list is empty.");
-//         } else {
-//             RCLCPP_INFO(this->get_logger(), "Remaining goals:");
-//             std::queue<std::pair<double, double>> temp_queue = goal_queue;
-//             while (!temp_queue.empty()) {
-//                 auto [x, y] = temp_queue.front();
-//                 temp_queue.pop();
-//                 RCLCPP_INFO(this->get_logger(), " - x=%.2f, y=%.2f", x, y);
-//             }
-//         }
-//     }
-// };
-
-// int main(int argc, char **argv) {
-//     rclcpp::init(argc, argv);
-//     rclcpp::spin(std::make_shared<MovementLogic>());
-//     rclcpp::shutdown();
-//     return 0;
-// }
+int main(int argc, char **argv) {
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<AstarPlanner>());
+    rclcpp::shutdown();
+    return 0;
+}
