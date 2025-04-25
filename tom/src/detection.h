@@ -27,6 +27,7 @@ private:
     void odomCallback(const nav_msgs::msg::Odometry::SharedPtr odom);
     std::vector<std::vector<geometry_msgs::msg::Point>> countSegments(const sensor_msgs::msg::LaserScan::SharedPtr scan);
     void detectCylinder(const std::vector<geometry_msgs::msg::Point> &segment);
+    void detectSquare(const std::vector<geometry_msgs::msg::Point> &segment);
     geometry_msgs::msg::Point findCentre(geometry_msgs::msg::Point P1, geometry_msgs::msg::Point P2, double r);
     bool checkExisting(geometry_msgs::msg::Point centre);
     void visualizeSegment(const std::vector<geometry_msgs::msg::Point> &segment);
@@ -34,6 +35,7 @@ private:
     geometry_msgs::msg::Point localToGlobal(const nav_msgs::msg::Odometry &global, const geometry_msgs::msg::Point &local);
     bool isThisAWall(const std::vector<geometry_msgs::msg::Point> &segment);
     bool isThisACorner(const std::vector<geometry_msgs::msg::Point> &segment);
+    bool isThis90(const std::vector<geometry_msgs::msg::Point> &segment);
 };
 
 #endif // DETECTION_H

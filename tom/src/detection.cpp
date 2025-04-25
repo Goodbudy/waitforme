@@ -66,6 +66,9 @@ std::vector<std::vector<geometry_msgs::msg::Point>> ObjDetect::countSegments(con
                     segmentVector.push_back(currentSegment);
                     if (!isThisAWall(currentSegment) && !isThisACorner(currentSegment))
                         detectCylinder(currentSegment);
+                    else if (!isThisAWall(currentSegment) && isThis90(currentSegment))
+                        detectSquare(currentSegment);
+                    
                     segStarted = false;
                 }
                 break;
@@ -79,6 +82,8 @@ std::vector<std::vector<geometry_msgs::msg::Point>> ObjDetect::countSegments(con
             rclcpp::sleep_for(std::chrono::milliseconds(10));
             if (!isThisAWall(currentSegment) && !isThisACorner(currentSegment))
                 detectCylinder(currentSegment);
+            else if (!isThisAWall(currentSegment) && isThis90(currentSegment))
+                detectSquare(currentSegment);
             segStarted = false;
         }
     }
@@ -118,6 +123,49 @@ void ObjDetect::detectCylinder(const std::vector<geometry_msgs::msg::Point> &seg
         }
     }
 }
+void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segment)
+{
+    if (segment.size() < 6)
+        return;
+
+    // Get points from the segment
+    const auto &p1 = segment.front();
+    const auto &p2 = segment.at(segment.size() / 2);
+    const auto &p3 = segment.back();
+
+    // Compute side lengths
+    double sideA = hypot(p2.x - p1.x, p2.y - p1.y);
+    double sideB = hypot(p3.x - p2.x, p3.y - p2.y);
+
+    double targetLength = 0.3;
+    double tolerance = 0.05;
+
+    if (isThis90(segment) &&
+        fabs(sideA - targetLength) < tolerance &&
+        fabs(sideB - targetLength) < tolerance)
+    {
+        geometry_msgs::msg::Point corner = p2;
+
+        // Optional: check if corner is already known to avoid duplicates
+        if (!checkExisting(corner) || firstCent)
+        {
+            firstCent = false;
+            centres.push_back(corner);
+
+            RCLCPP_INFO(this->get_logger(), "Square corner detected at x = %.2f, y = %.2f", corner.x, corner.y);
+
+            // Reuse the cylinder marker for now with a different color or style
+            auto marker = produceMarkerCylinder(corner);
+            marker.color.r = 1.0;  // Red for square
+            marker.color.g = 0.0;
+            marker.color.b = 0.0;
+
+            marker_pub_->publish(marker);
+        }
+    }
+}
+
+
 
 geometry_msgs::msg::Point ObjDetect::findCentre(geometry_msgs::msg::Point P1, geometry_msgs::msg::Point P2, double r)
 {
@@ -224,6 +272,17 @@ bool ObjDetect::isThisACorner(const std::vector<geometry_msgs::msg::Point> &segm
     float theta = acos(cosTheta) * 180 / M_PI;
 
     return theta < 120;
+}
+
+bool ObjDetect::isThis90(const std::vector<geometry_msgs::msg::Point> &segment)
+{
+    float a = hypot(segment.back().x - segment[segment.size() / 2].x, segment.back().y - segment[segment.size() / 2].y);
+    float b = hypot(segment.front().x - segment[segment.size() / 2].x, segment.front().y - segment[segment.size() / 2].y);
+    float c = hypot(segment.back().x - segment.front().x, segment.back().y - segment.front().y);
+    float cosTheta = (a * a + b * b - c * c) / (2 * a * b);
+    float theta = acos(cosTheta) * 180 / M_PI;
+
+    return 85 < theta < 95;
 }
 
 int main(int argc, char **argv)
