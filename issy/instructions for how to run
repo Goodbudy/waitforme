@@ -7,7 +7,7 @@ Terminal 1:
 
 Terminal 2: 
 - export TURTLEBOT3_MODEL=waffle_pi
-- ros2 launch turtlebot3_navigation2 navigation2.launch.py map:=$HOME/ros2_ws/Gallerymap.yaml
+- ros2 launch turtlebot3_navigation2 navigation2.launch.py map:=$HOME/ros2_ws/src/waitforme/GalleryMap.yaml
 - "Localise the turtlebot in RViz using the 2DPoseEstimate thing, then minimise window
 
 Terminal 3:
@@ -27,3 +27,14 @@ Terminal 4:
 
 - "This one will execute the next goal in the list
 - ros2 service call /execute_goals issy/srv/ExecuteGoals "{}"
+
+
+
+
+
+To Do  
+- matrix for table goals values, make service better - one goal at a time send
+- make publisher for goal matrix
+- path planning - use anndys node for following path
+- localise like normal w nav2goal usually
+- 
