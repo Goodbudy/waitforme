@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
     // rclcpp::sleep_for(std::chrono::seconds(20));
     // rclcpp::spin(node);
     //rclcpp::shutdown();
-    exec_thread.join(); 
+    executor_thread.join(); 
     return 0;
 }
 

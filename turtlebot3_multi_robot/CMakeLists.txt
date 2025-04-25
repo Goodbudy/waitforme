@@ -41,11 +41,6 @@ install(DIRECTORY launch models rviz urdf worlds params
 
 ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/multi_robot.dsv.in")
 
-# Install shared resource directories
-install(DIRECTORY launch DESTINATION share/${PROJECT_NAME}/)
-install(DIRECTORY params DESTINATION share/${PROJECT_NAME}/)
-install(DIRECTORY rviz DESTINATION share/${PROJECT_NAME}/)
-
 # Linting (optional)
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
