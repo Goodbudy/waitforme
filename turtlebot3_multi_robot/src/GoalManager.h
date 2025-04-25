@@ -32,14 +32,14 @@
 #include <nav2_msgs/action/navigate_to_pose.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 
-class GoalManager {
+class GoalManager: public rclcpp::Node {
 public:
-    GoalManager(rclcpp::Node::SharedPtr node);
+    GoalManager();
 
     void send_goal(const std::string& robot_namespace, const geometry_msgs::msg::PoseStamped& goal);
 
 private:
-    rclcpp::Node::SharedPtr node_;
+    //rclcpp::Node::SharedPtr node_;
 };
 
 

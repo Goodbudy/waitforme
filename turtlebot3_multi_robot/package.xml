@@ -6,7 +6,7 @@
   <description>
     Multi robot support TurtleBot3 in Gazebo
   </description>
-  <maintainer email="arshadm78@yahoo.com">Arshad Mehmood</maintainer>
+  <maintainer email="hallie.r.robins@student.uts.edu.au">Hallie Robins</maintainer>
   <license>Apache 2.0</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
   <depend>gazebo_ros_pkgs</depend>

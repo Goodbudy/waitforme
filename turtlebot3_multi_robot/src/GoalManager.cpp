@@ -151,16 +151,16 @@ void GoalManager::send_goal(const std::string& robot_namespace, const geometry_m
     send_goal_options.goal_response_callback =
         [this, robot_namespace](GoalHandleNavigate::SharedPtr goal_handle) {
             if (!goal_handle) {
-                RCLCPP_ERROR(node_->get_logger(), "[%s] Goal rejected by server", robot_namespace.c_str());
+                RCLCPP_ERROR(this->get_logger(), "[%s] Goal rejected by server", robot_namespace.c_str());
             } else {
-                RCLCPP_INFO(node_->get_logger(), "[%s] Goal accepted", robot_namespace.c_str());
+                RCLCPP_INFO(this->get_logger(), "[%s] Goal accepted", robot_namespace.c_str());
             }
         };
 
     send_goal_options.feedback_callback =
         [this, robot_namespace](GoalHandleNavigate::SharedPtr,
                                 const std::shared_ptr<const NavigateToPose::Feedback> feedback) {
-            RCLCPP_INFO(node_->get_logger(), "[%s] Feedback: distance remaining = %.2f",
+            RCLCPP_INFO(this->get_logger(), "[%s] Feedback: distance remaining = %.2f",
                         robot_namespace.c_str(), feedback->distance_remaining);
         };
 
