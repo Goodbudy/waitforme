@@ -633,7 +633,7 @@ private:
     };
 
 // In your class definition, add:
-int inflation_radius_cells_{1};  // ← adjust this to taste (e.g. 2–5 cells)
+int inflation_radius_cells_{2};  // ← adjust this to taste (e.g. 2–5 cells)
 
 void inflateObstacles()
 {

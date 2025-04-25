@@ -18,7 +18,7 @@ class MovementLogic : public rclcpp::Node
 public:
     MovementLogic()
     : Node("movement_logic"),
-       x_home_(1.75), y_home_(1.45), tolerance_(0.2),
+       x_home_(1.3), y_home_(1.15), tolerance_(0.2),
         //   x_home_(3.5), y_home_(3.2), tolerance_(0.2),
       state_(State::HOMING), current_target_idx_(0),
       current_x_(0.0), current_y_(0.0)
