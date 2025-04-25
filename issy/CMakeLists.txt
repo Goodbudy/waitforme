@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.5)
 project(issy)
 
+# Install all launch files under launch/ into share/issy/launch/
+install(
+  DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nav2_msgs REQUIRED)
