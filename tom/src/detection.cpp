@@ -155,7 +155,7 @@ void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segme
             RCLCPP_INFO(this->get_logger(), "Square corner detected at x = %.2f, y = %.2f", corner.x, corner.y);
 
             // Reuse the cylinder marker for now with a different color or style
-            auto marker = produceMarkerCylinder(corner, visualization_msgs::msg::Marker::SQUARE, "red");
+            auto marker = produceMarkerCylinder(corner, visualization_msgs::msg::Marker::CUBE, "red");
 
 
             marker_pub_->publish(marker);
