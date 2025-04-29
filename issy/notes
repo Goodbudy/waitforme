@@ -1,14 +1,19 @@
 - movement logic
 - goal queue management and timing managament
 - create goal services, movement trigger services, 
-- integrtion into my cntroller node, communication with path planning and localisation, 
+- integrtion into my controller node, communication with path planning and localisation, 
 - making launch files
 - optimising and scaling for multupe turtlebots to pull from the same logic cpp file
 - stte mchibe nd control flow
 
 
-
-
+NOTES TO DO:
+- table values (x/y) for service
+- if anyone is idle, wait at certian pos (behind)
+- launch file - remove gazebo stuff eventually - 
+- localisation - identifier - figure out
+- add namespace thing into my launch file for movementlogic and localisation
+- change way services are accepted for different turtlebots
 
 
 
