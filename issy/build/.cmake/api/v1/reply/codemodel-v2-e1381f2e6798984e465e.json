@@ -1,0 +1,242 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-c5101c8274747446b78d.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.12"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18
+					]
+				},
+				{
+					"build" : "issy__py",
+					"jsonFile" : "directory-issy__py-Debug-43f5066d2cf6da73d4bd.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.12"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "build/issy__py",
+					"targetIndexes" : 
+					[
+						4
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1
+					],
+					"name" : "issy",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16,
+						17,
+						18
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "ament_cmake_python_build_issy_egg::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ament_cmake_python_build_issy_egg-Debug-8f82e9c71440fcc3db66.json",
+					"name" : "ament_cmake_python_build_issy_egg",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "ament_cmake_python_copy_issy::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-ament_cmake_python_copy_issy-Debug-89032ef644d467d73405.json",
+					"name" : "ament_cmake_python_copy_issy",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "issy::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-issy-Debug-198298fddc4871ee3882.json",
+					"name" : "issy",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "issy__cpp::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-issy__cpp-Debug-d73ec8438b761b738d1b.json",
+					"name" : "issy__cpp",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "issy__py::@55daf6e95b557a9b0390",
+					"jsonFile" : "target-issy__py-Debug-762b114db9752a1b85f6.json",
+					"name" : "issy__py",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "issy__rosidl_generator_c::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-issy__rosidl_generator_c-Debug-62847d379d14d4f56384.json",
+					"name" : "issy__rosidl_generator_c",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "issy__rosidl_generator_py::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-issy__rosidl_generator_py-Debug-1635883693184ad5dd70.json",
+					"name" : "issy__rosidl_generator_py",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "issy__rosidl_typesupport_c::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-issy__rosidl_typesupport_c-Debug-8777ea3e0c427bf89a0f.json",
+					"name" : "issy__rosidl_typesupport_c",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "issy__rosidl_typesupport_c__pyext::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-issy__rosidl_typesupport_c__pyext-Debug-38a5ccf84400871b0be3.json",
+					"name" : "issy__rosidl_typesupport_c__pyext",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "issy__rosidl_typesupport_cpp::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-issy__rosidl_typesupport_cpp-Debug-9503b255a4a409a11cb2.json",
+					"name" : "issy__rosidl_typesupport_cpp",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "issy__rosidl_typesupport_fastrtps_c::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-issy__rosidl_typesupport_fastrtps_c-Debug-d31663138fab8e3e94ef.json",
+					"name" : "issy__rosidl_typesupport_fastrtps_c",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "issy__rosidl_typesupport_fastrtps_c__pyext::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-issy__rosidl_typesupport_fastrtps_c__pyext-Debug-8200de8f810f435fe6d7.json",
+					"name" : "issy__rosidl_typesupport_fastrtps_c__pyext",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "issy__rosidl_typesupport_fastrtps_cpp::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-issy__rosidl_typesupport_fastrtps_cpp-Debug-56d27b3d93f6d6a2da60.json",
+					"name" : "issy__rosidl_typesupport_fastrtps_cpp",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "issy__rosidl_typesupport_introspection_c::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-issy__rosidl_typesupport_introspection_c-Debug-5976c511f7096709a035.json",
+					"name" : "issy__rosidl_typesupport_introspection_c",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "issy__rosidl_typesupport_introspection_c__pyext::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-issy__rosidl_typesupport_introspection_c__pyext-Debug-8d113c3fde0dd648c964.json",
+					"name" : "issy__rosidl_typesupport_introspection_c__pyext",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "issy__rosidl_typesupport_introspection_cpp::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-issy__rosidl_typesupport_introspection_cpp-Debug-eec95ad35b7776be005a.json",
+					"name" : "issy__rosidl_typesupport_introspection_cpp",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "issy_uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-issy_uninstall-Debug-f3b8c47aaee4bf33e1af.json",
+					"name" : "issy_uninstall",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "movementlogic::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-movementlogic-Debug-fdb6a5f99e197dac288f.json",
+					"name" : "movementlogic",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "uninstall::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-uninstall-Debug-d8dd589d57061ce65895.json",
+					"name" : "uninstall",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/andrew/ros2_ws/src/waitforme/issy/build",
+		"source" : "/home/andrew/ros2_ws/src/waitforme/issy"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}
