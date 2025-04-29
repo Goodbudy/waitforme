@@ -33,7 +33,7 @@ def generate_launch_description():
         output='screen'
     )
     delayed_astar = TimerAction(
-        period=300.0,
+        period=240.0,
         actions=[astar_node]
     )
 
@@ -62,7 +62,7 @@ def generate_launch_description():
         }.items()
     )
     delayed_nav2 = TimerAction(
-        period=310.0,
+        period=250.0,
         actions=[nav2_bringup]
     )
 
@@ -86,7 +86,7 @@ def generate_launch_description():
         }.items()
     )
     delayed_rviz = TimerAction(
-        period=320.0,
+        period=260.0,
         actions=[rviz_launch]
     )
 
