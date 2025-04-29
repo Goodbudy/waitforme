@@ -34,13 +34,13 @@ def generate_launch_description():
 
     # Names and poses of the robots
     robots = [
-        {'name': 'tb1', 'x_pose': '-1.5', 'y_pose': '-0.5', 'z_pose': 0.01},
-        {'name': 'tb2', 'x_pose': '-1.5', 'y_pose': '0.5', 'z_pose': 0.01},
+        {'name': 'tb1', 'x_pose': '1.0', 'y_pose': '0.8', 'z_pose': 0.01},
+        {'name': 'tb2', 'x_pose': '2.0', 'y_pose': '2.5', 'z_pose': 0.01},
         # ...
         # ...
         ]
 
-    TURTLEBOT3_MODEL = 'waffle'
+    TURTLEBOT3_MODEL = 'waffle_pi'
 
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
     declare_use_sim_time = DeclareLaunchArgument(
@@ -75,8 +75,8 @@ def generate_launch_description():
     )
 
     world = os.path.join(
-        get_package_share_directory('turtlebot3_multi_robot'),
-        'worlds', 'multi_robot_world.world')
+        get_package_share_directory('turtlebot3_gazebo'),
+        'worlds', 'Gallery_Test2.world')
 
     gzserver_cmd = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -112,7 +112,7 @@ def generate_launch_description():
         executable='map_server',
         name='map_server',
         output='screen',
-        parameters=[{'yaml_filename': os.path.join(get_package_share_directory('turtlebot3_navigation2'), 'map', 'map.yaml'),
+        parameters=[{'yaml_filename': os.path.join(get_package_share_directory('turtlebot3_multi_robot'), 'worlds', 'GalleryMapHD.yaml'),
                      },],
         remappings=remappings)
 
