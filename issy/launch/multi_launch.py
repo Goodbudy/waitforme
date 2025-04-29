@@ -39,7 +39,7 @@ def generate_launch_description():
 
     # 3) Bringup Nav2 after 5m10s (310s)
     map_file = os.path.join(
-        os.environ['HOME'], 'ros2_ws', 'src', 'waitforme', 'GalleryMap.yaml'
+        os.environ['HOME'], 'ros2_ws', 'src', 'waitforme', 'GalleryMapHD.yaml'
     )
     params_file = os.path.join(
         get_package_share_directory('nav2_bringup'),
