@@ -8,6 +8,7 @@ from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
+    space = 20.0
     # 0) Set TurtleBot3 model environment variable
     set_model = SetEnvironmentVariable(
         name='TURTLEBOT3_MODEL',
@@ -33,7 +34,7 @@ def generate_launch_description():
         output='screen'
     )
     delayed_astar = TimerAction(
-        period=240.0,
+        period=space,
         actions=[astar_node]
     )
 
@@ -62,7 +63,7 @@ def generate_launch_description():
         }.items()
     )
     delayed_nav2 = TimerAction(
-        period=250.0,
+        period=space + 10.0,
         actions=[nav2_bringup]
     )
 
@@ -86,18 +87,29 @@ def generate_launch_description():
         }.items()
     )
     delayed_rviz = TimerAction(
-        period=260.0,
+        period=space + 20.0,
         actions=[rviz_launch]
     )
 
-    # 5) Run localization node after 5m30s (330s)
+    # 5) Run localization node
     localization_node = Node(
         package='tom',
         executable='localisation_node',
         output='screen'
     )
     delayed_localization = TimerAction(
-        period=330.0,
+        period=space + 30.0,
+        actions=[localization_node]
+    )
+
+    # 6) Run object detection
+    detection_node = Node(
+        package='tom',
+        executable='detection_node',
+        output='screen'
+    )
+    delayed_localization = TimerAction(
+        period=space + 40.0,
         actions=[localization_node]
     )
 
@@ -108,7 +120,7 @@ def generate_launch_description():
         output='screen'
     )
     delayed_movement = TimerAction(
-        period=340.0,
+        period=space + 50.0,
         actions=[movement_node]
     )
 
