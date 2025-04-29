@@ -1,3 +1,17 @@
+- movement logic
+- goal queue management and timing managament
+- create goal services, movement trigger services, 
+- integrtion into my cntroller node, communication with path planning and localisation, 
+- making launch files
+- optimising and scaling for multupe turtlebots to pull from the same logic cpp file
+- stte mchibe nd control flow
+
+
+
+
+
+
+
 These cpp files exist in different packages, movementlogic.cpp exists in issy, and astar_planner exists in andy. Implement functions in movementlogic.cpp and astar_planner.cpp that will do the following:
 1. movementlogic should publish goals received from the addgoals service one at a time to the atarplanner. 
 2. astar_planner.cpp should subscribe to these goals and use them instead of hardcoded values to make the paths. 

@@ -1,3 +1,17 @@
+HOW TO RUN THE LAUNCH FILE
+
+TERMINAL 1: Launch file (takes about 4 mins total)
+ros2 launch issy multi_launch.py
+
+TERMINAL 2: example goals w service call
+ros2 service call /add_goal issy/srv/AddGoal "{x: 1.0, y: 0.8}"
+ros2 service call /add_goal issy/srv/AddGoal "{x: 2.0, y: 2.5}"
+
+TERMINAL 2: service call for executing next goal in queue (only when turtlebot is in idle state/back at bar)
+ros2 service call /execute_goals issy/srv/ExecuteGoals "{}"
+
+
+
 Notes:
 - "run all of this in your ros2_ws
 
@@ -23,10 +37,10 @@ Terminal 3:
 
 Terminal 4:
 - "Below command will add goal to the queue
-- ros2 service call /add_goal issy/srv/AddGoal "{x: 2.0, y: 2.5}"
+ros2 service call /add_goal issy/srv/AddGoal "{x: 2.0, y: 2.5}"
 
 - "This one will execute the next goal in the list
-- ros2 service call /execute_goals issy/srv/ExecuteGoals "{}"
+ros2 service call /execute_goals issy/srv/ExecuteGoals "{}"
 
 
 
@@ -38,3 +52,4 @@ To Do
 - path planning - use anndys node for following path
 - localise like normal w nav2goal usually
 - 
+
