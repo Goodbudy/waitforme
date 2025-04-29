@@ -23,6 +23,10 @@ TurtleBot::TurtleBot(std::string name, std::shared_ptr<rclcpp::Node> node)
     RCLCPP_INFO(node_->get_logger(), "[%s] TurtleBot initialized", bot_name.c_str());
 }
 
+bool TurtleBot::isHome() const {
+    return is_home_;
+}
+
 bool TurtleBot::isActionServerReady() {
     return client_->wait_for_action_server(std::chrono::seconds(1));
 }

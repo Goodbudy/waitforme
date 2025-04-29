@@ -135,8 +135,8 @@ void GoalManager::send_goal(const std::string& robot_namespace, const geometry_m
         this,
         "/" + robot_namespace + "/navigate_to_pose"
     );
-    
-    RCLCPP_INFO(this->get_logger(), "[%s] Goal sent!", robot_namespace.c_str());
+
+    RCLCPP_INFO(this->get_logger(), "[%s] Sending goal...", robot_namespace.c_str());
 
     if (!action_client->wait_for_action_server(10s)) {
         RCLCPP_ERROR(this->get_logger(), "Action server not available for %s", robot_namespace.c_str());
@@ -155,13 +155,6 @@ void GoalManager::send_goal(const std::string& robot_namespace, const geometry_m
             } else {
                 RCLCPP_INFO(this->get_logger(), "[%s] Goal accepted", robot_namespace.c_str());
             }
-        };
-
-    send_goal_options.feedback_callback =
-        [this, robot_namespace](GoalHandleNavigate::SharedPtr,
-                                const std::shared_ptr<const NavigateToPose::Feedback> feedback) {
-            RCLCPP_INFO(this->get_logger(), "[%s] Feedback: distance remaining = %.2f",
-                        robot_namespace.c_str(), feedback->distance_remaining);
         };
 
     send_goal_options.result_callback =
@@ -183,5 +176,44 @@ void GoalManager::send_goal(const std::string& robot_namespace, const geometry_m
         };
 
     action_client->async_send_goal(goal, send_goal_options);
+}
+
+void GoalManager::register_bot(const std::string& name, std::shared_ptr<TurtleBot> bot) {
+    bots_[name] = bot;
+    pending_goals_[name] = std::queue<geometry_msgs::msg::PoseStamped>();
+    RCLCPP_INFO(this->get_logger(), "Registered TurtleBot: %s", name.c_str());
+}
+
+void GoalManager::queue_goal(const std::string& name, const geometry_msgs::msg::PoseStamped& goal_pose) {
+    if (pending_goals_.find(name) != pending_goals_.end()) {
+        pending_goals_[name].push(goal_pose);
+        RCLCPP_INFO(this->get_logger(), "[%s] Queued new goal.", name.c_str());
+    } else {
+        RCLCPP_WARN(this->get_logger(), "[%s] Cannot queue goal: bot not registered.", name.c_str());
+    }
+}
+
+void GoalManager::update() {
+    for (auto& pair : pending_goals_) {
+        const std::string& name = pair.first;
+        auto& goal_queue = pair.second;
+        auto bot = bots_[name];
+
+        if (bot->isActionServerReady() && bot->isHome() && !goal_queue.empty()) {
+            auto next_goal = goal_queue.front();
+            goal_queue.pop();
+            bot->navigateTo(next_goal.pose.position.x, next_goal.pose.position.y);
+            bot->setAtHome(false);
+            RCLCPP_INFO(this->get_logger(), "[%s] Assigned queued goal.", name.c_str());
+        }
+    }
+}
+
+bool GoalManager::has_pending_goals(const std::string& name) const {
+    auto it = pending_goals_.find(name);
+    if (it != pending_goals_.end()) {
+        return !it->second.empty();
+    }
+    return false;
 }
 
