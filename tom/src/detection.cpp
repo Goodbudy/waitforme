@@ -118,7 +118,7 @@ void ObjDetect::detectCylinder(const std::vector<geometry_msgs::msg::Point> &seg
                 firstCent = false;
                 centres.push_back(centre);
                 RCLCPP_INFO(this->get_logger(), "Circle with radius ~%.2fm detected. Center: x = %.2f, y = %.2f, z = %.2f", targetRadius, centre.x, centre.y, centre.z);
-                marker_pub_->publish(produceMarkerCylinder(centre));
+                marker_pub_->publish(produceMarkerCylinder(centre, visualization_msgs::msg::Marker::CYLINDER, "black"));
             }
         }
     }
@@ -155,10 +155,8 @@ void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segme
             RCLCPP_INFO(this->get_logger(), "Square corner detected at x = %.2f, y = %.2f", corner.x, corner.y);
 
             // Reuse the cylinder marker for now with a different color or style
-            auto marker = produceMarkerCylinder(corner);
-            marker.color.r = 1.0;  // Red for square
-            marker.color.g = 0.0;
-            marker.color.b = 0.0;
+            auto marker = produceMarkerCylinder(corner, visualization_msgs::msg::Marker::SQUARE, "red");
+
 
             marker_pub_->publish(marker);
         }
@@ -229,14 +227,14 @@ void ObjDetect::visualizeSegment(const std::vector<geometry_msgs::msg::Point> &s
     marker_pub_->publish(line_marker);
 }
 
-visualization_msgs::msg::Marker ObjDetect::produceMarkerCylinder(geometry_msgs::msg::Point pt)
+visualization_msgs::msg::Marker ObjDetect::produceMarkerCylinder(geometry_msgs::msg::Point pt, int type, const std::string& colour)
 {
     visualization_msgs::msg::Marker marker;
     marker.header.frame_id = "map";
     marker.header.stamp = this->get_clock()->now();
     marker.ns = "cylinder_markers";
     marker.id = ct_++;
-    marker.type = visualization_msgs::msg::Marker::CYLINDER;
+    marker.type = type;
     marker.action = visualization_msgs::msg::Marker::ADD;
     marker.pose.position = pt;
     marker.pose.orientation.w = 1.0;
@@ -244,7 +242,20 @@ visualization_msgs::msg::Marker ObjDetect::produceMarkerCylinder(geometry_msgs::
     marker.scale.y = 0.3;
     marker.scale.z = 0.2;
     marker.color.a = 1.0;
-
+    if (colour == "black") {
+        marker.color.r = 0.0;
+        marker.color.g = 0.0;
+        marker.color.b = 0.0;
+    } else if (colour == "red") {
+        marker.color.r = 1.0;
+        marker.color.g = 0.0;
+        marker.color.b = 0.0;
+    } else {
+        // Default to black if unrecognized
+        marker.color.r = 0.0;
+        marker.color.g = 0.0;
+        marker.color.b = 0.0;
+    }
     return marker;
 }
 

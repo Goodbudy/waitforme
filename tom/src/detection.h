@@ -31,7 +31,7 @@ private:
     geometry_msgs::msg::Point findCentre(geometry_msgs::msg::Point P1, geometry_msgs::msg::Point P2, double r);
     bool checkExisting(geometry_msgs::msg::Point centre);
     void visualizeSegment(const std::vector<geometry_msgs::msg::Point> &segment);
-    visualization_msgs::msg::Marker produceMarkerCylinder(geometry_msgs::msg::Point pt);
+    visualization_msgs::msg::Marker produceMarkerCylinder(geometry_msgs::msg::Point pt, int type, const std::string& colour);
     geometry_msgs::msg::Point localToGlobal(const nav_msgs::msg::Odometry &global, const geometry_msgs::msg::Point &local);
     bool isThisAWall(const std::vector<geometry_msgs::msg::Point> &segment);
     bool isThisACorner(const std::vector<geometry_msgs::msg::Point> &segment);
