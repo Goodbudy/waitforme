@@ -75,7 +75,7 @@ std::vector<std::vector<geometry_msgs::msg::Point>> ObjDetect::countSegments(con
             }
             i++;
         }
-
+        /*
         if (segStarted && !currentSegment.empty())
         {
             segmentVector.push_back(currentSegment);
@@ -86,11 +86,27 @@ std::vector<std::vector<geometry_msgs::msg::Point>> ObjDetect::countSegments(con
                 detectSquare(currentSegment);
             segStarted = false;
         }
+        */
+        if (segStarted && !currentSegment.empty())
+        {
+            segmentVector.push_back(currentSegment);
+            rclcpp::sleep_for(std::chrono::milliseconds(10));
+            if (!isThisAWall(currentSegment)) {
+                if (isThis90(currentSegment)) {
+                    detectSquare(currentSegment);
+                } else if (!isThisACorner(currentSegment)) {
+                    detectCylinder(currentSegment);
+                }
+            }
+            segStarted = false;
+        }
+
     }
 
     return segmentVector;
 }
 
+/*
 void ObjDetect::detectCylinder(const std::vector<geometry_msgs::msg::Point> &segment)
 {
     if (segment.size() >= 6)
@@ -123,6 +139,53 @@ void ObjDetect::detectCylinder(const std::vector<geometry_msgs::msg::Point> &seg
         }
     }
 }
+*/
+void ObjDetect::detectCylinder(const std::vector<geometry_msgs::msg::Point> &segment)
+{
+    if (segment.size() >= 6 && !isThisACorner(segment))
+    {
+        const auto &p1 = segment.front();
+        const auto &p2 = segment.at(segment.size() / 2);
+        const auto &p3 = segment.back();
+
+        double a = hypot(p2.x - p1.x, p2.y - p1.y);
+        double b = hypot(p3.x - p2.x, p3.y - p2.y);
+        double c = hypot(p3.x - p1.x, p3.y - p1.y);
+
+        double cosTheta = (a * a + b * b - c * c) / (2 * a * b);
+        double theta = acos(cosTheta);
+        double R = c / (2 * fabs(sin(theta / 2)));
+
+        double targetRadius = 0.15;
+        double tolerance_ = 0.01;
+
+        if (fabs(R - targetRadius) < tolerance_)
+        {
+            geometry_msgs::msg::Point centre = findCentre(p1, p3, targetRadius);
+
+            // New: verify all points lie close to this radius
+            bool allCloseToRadius = true;
+            for (const auto &pt : segment)
+            {
+                double dist = hypot(pt.x - centre.x, pt.y - centre.y);
+                if (fabs(dist - targetRadius) > tolerance_)
+                {
+                    allCloseToRadius = false;
+                    break;
+                }
+            }
+
+            if (allCloseToRadius && (!checkExisting(centre) || firstCent))
+            {
+                firstCent = false;
+                centres.push_back(centre);
+                RCLCPP_INFO(this->get_logger(), "Circle with radius ~%.2fm detected. Center: x = %.2f, y = %.2f, z = %.2f", targetRadius, centre.x, centre.y, centre.z);
+                marker_pub_->publish(produceMarkerCylinder(centre, visualization_msgs::msg::Marker::CYLINDER, "black"));
+            }
+        }
+    }
+}
+
 void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segment)
 {
     if (segment.size() < 6)
@@ -284,7 +347,7 @@ bool ObjDetect::isThisACorner(const std::vector<geometry_msgs::msg::Point> &segm
 
     return theta < 120;
 }
-
+/*
 bool ObjDetect::isThis90(const std::vector<geometry_msgs::msg::Point> &segment)
 {
     float a = hypot(segment.back().x - segment[segment.size() / 2].x, segment.back().y - segment[segment.size() / 2].y);
@@ -295,6 +358,18 @@ bool ObjDetect::isThis90(const std::vector<geometry_msgs::msg::Point> &segment)
 
     return 85 < theta < 95;
 }
+*/
+bool ObjDetect::isThis90(const std::vector<geometry_msgs::msg::Point> &segment)
+{
+    float a = hypot(segment.back().x - segment[segment.size() / 2].x, segment.back().y - segment[segment.size() / 2].y);
+    float b = hypot(segment.front().x - segment[segment.size() / 2].x, segment.front().y - segment[segment.size() / 2].y);
+    float c = hypot(segment.back().x - segment.front().x, segment.back().y - segment.front().y);
+    float cosTheta = (a * a + b * b - c * c) / (2 * a * b);
+    float theta = acos(cosTheta) * 180 / M_PI;
+
+    return (theta > 85.0 && theta < 95.0);
+}
+
 
 int main(int argc, char **argv)
 {
