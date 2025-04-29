@@ -52,10 +52,10 @@ int main(int argc, char** argv) {
         executor.spin();
     });
 
-    geometry_msgs::msg::PoseStamped home = create_goal(-1.5, 0.5, 0.0);
+    geometry_msgs::msg::PoseStamped home = create_goal(3.5, 3.2, 0.0);
     std::vector<geometry_msgs::msg::PoseStamped> task_goals = {
-        create_goal(1.0, -0.5, 0.0),
-        create_goal(1.0, 1.0, 0.0)
+        create_goal(2.0, 2.5, 0.0),
+        create_goal(1.0, 0.8, 0.0)
     };
 
     geometry_msgs::msg::PoseStamped current_pose = home;
