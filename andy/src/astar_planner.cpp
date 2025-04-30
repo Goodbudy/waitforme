@@ -79,6 +79,8 @@ void AstarPlanner::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg
             grid_[y][x] = (val == 100 || val == -1) ? 1 : 0;
         }
     }
+    original_grid_ = grid_;
+    object_grid_ = grid_;
     map_ready_ = true;
     RCLCPP_INFO(get_logger(), "Map received: %zux%zu", width_, height_);
     // inflateObstacles();
@@ -107,9 +109,11 @@ void AstarPlanner::goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr
                 current_x_, current_y_, gx, gy);
 
     // 1) A* search on grid:
-    // apply the buffer
-    obstacle_buffer_radius_ = 1;
-    //applyObstacleBuffering(obstacle_buffer_radius_);
+    // apply the buffer in m
+    // pretend object is there
+    newObject(2,2.4,3);
+    obstacle_buffer_radius_ = 0.1;
+    applyObstacleBuffering(obstacle_buffer_radius_);
     auto grid_path = aStarSearch(current_x_, current_y_, gx, gy);
 
     // 2) Save occupancy + path to PNG:
@@ -156,7 +160,7 @@ void AstarPlanner::saveGridAsImage(const std::vector<std::vector<int>> &grid, co
     }
     for (const auto &point : path)
     {
-        RCLCPP_INFO(this->get_logger(), "Path point x: %d, Path point y: %d", point->x, point->y);
+        //RCLCPP_INFO(this->get_logger(), "Path point x: %d, Path point y: %d", point->x, point->y);
         image.at<cv::Vec3b>(point->y, point->x) = cv::Vec3b(0, 0, 255); // Red (BGR format)
     }
 
@@ -180,7 +184,7 @@ void AstarPlanner::publishPathToRViz(const std::vector<std::pair<double, double>
     line_strip.id = 0;
     line_strip.type = visualization_msgs::msg::Marker::LINE_STRIP;
     line_strip.action = visualization_msgs::msg::Marker::ADD;
-    line_strip.scale.x = 0.05; // Thickness
+    line_strip.scale.x = 0.025; // Thickness
     line_strip.color.a = 1.0;
     line_strip.color.r = 1.0;
     line_strip.color.g = 0.0;
@@ -210,7 +214,7 @@ std::vector<std::pair<double, double>> AstarPlanner::convertGridToWorld(std::vec
         double wx = path->x * resolution_ + origin_x_ + resolution_ / 2.0;
         double wy = path->y * resolution_ + origin_y_ + resolution_ / 2.0;
         worldPath.emplace_back(wx, wy);
-        RCLCPP_INFO(this->get_logger(), "world path x: %.2f, y: %.2f", wx, wy);
+        //RCLCPP_INFO(this->get_logger(), "world path x: %.2f, y: %.2f", wx, wy);
     }
     return worldPath;
 }
@@ -243,30 +247,26 @@ void AstarPlanner::publishPath(std::vector<std::pair<double, double>> worldPath)
 
 void AstarPlanner::applyObstacleBuffering(double buffer)
 {
-    // Create a copy to read from
-    std::vector<std::vector<int>> original_grid = grid_;
-
     int buffer_size = static_cast<int>(buffer / resolution_);
-    int height = grid_.size();
-    int width = grid_[0].size();
+    auto grid = object_grid_;
 
     RCLCPP_INFO(this->get_logger(), "Buffering");
     RCLCPP_INFO(this->get_logger(), "Buffer size in cells: %d", buffer_size);
-    RCLCPP_INFO(this->get_logger(), "Original grid cell (10,10) = %d", original_grid[10][10]);
+    RCLCPP_INFO(this->get_logger(), "Original grid cell (10,10) = %d", original_grid_[10][10]);
 
     int total_obstacles = 0;
-    for (int y = 0; y < grid_.size(); ++y)
-        for (int x = 0; x < grid_[0].size(); ++x)
-            if (grid_[y][x] == 1)
+    for (int y = 0; y < grid.size(); ++y)
+        for (int x = 0; x < grid[0].size(); ++x)
+            if (grid[y][x] == 0)
                 total_obstacles++;
 
     RCLCPP_INFO(this->get_logger(), "Total obstacle cells: %d", total_obstacles);
 
-    for (int y = 0; y < height; ++y)
+    for (int y = 0; y < height_; ++y)
     {
-        for (int x = 0; x < width; ++x)
+        for (int x = 0; x < width_; ++x)
         {
-            if (original_grid[y][x] == 1) // Only expand around original obstacles
+            if (object_grid_[y][x] == 1) // Only expand around original obstacles and new obstacles
             {
                 for (int dy = -buffer_size; dy <= buffer_size; ++dy)
                 {
@@ -275,7 +275,7 @@ void AstarPlanner::applyObstacleBuffering(double buffer)
                         int nx = x + dx;
                         int ny = y + dy;
 
-                        if (nx >= 0 && ny >= 0 && ny < height && nx < width)
+                        if (nx >= 0 && ny >= 0 && ny < height_ && nx < width_)
                         {
                             grid_[ny][nx] = 1;
                         }
@@ -286,6 +286,32 @@ void AstarPlanner::applyObstacleBuffering(double buffer)
     }
 }
 
+void AstarPlanner::newObject(double worldx, double worldy, double radius)
+{
+    RCLCPP_INFO(this->get_logger(), "New Object Detected");
+    RCLCPP_INFO(this->get_logger(), "Object XPos: %.2f , YPos: %.2f , Radius %.2f", worldx, worldy, radius);
+    //yes the grid x and y needs to be switched. 
+    int gridx = (worldx - origin_x_ - resolution_/2) / resolution_;
+    int gridy = (worldy - origin_y_ - resolution_/2) / resolution_;;
+
+    RCLCPP_INFO(this->get_logger(), "gridx: %.2f , gridy: %.2f", gridx, gridy);
+
+    for (int dy = -radius; dy <= radius; ++dy)
+                {
+                    for (int dx = -radius; dx <= radius; ++dx)
+                    {
+                        int nx = gridx + dx;
+                        int ny = gridy + dy;
+
+                        if (nx >= 0 && ny >= 0 && ny < height_ && nx < width_)
+                        {
+                            object_grid_[ny][nx] = 1;
+                        }
+                    }
+                }
+
+    //object_grid_[gridx][gridy] = 1;
+}
 // Impliment A* algorithim. Take an initial start X and Y positon, a goal X and Y Position and a map
 // NOTE: x and y positions are relative to the Rviz map, internal conversion are done to change positions to grid locations
 std::vector<AstarPlanner::Point *> AstarPlanner::aStarSearch(double startX, double startY, double goalX, double goalY)

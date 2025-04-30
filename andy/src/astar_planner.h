@@ -32,6 +32,8 @@ class AstarPlanner : public rclcpp::Node {
 
     // Grid and pose data
     std::vector<std::vector<int>> grid_;
+    std::vector<std::vector<int>> original_grid_;
+    std::vector<std::vector<int>> object_grid_;
     double origin_x_, origin_y_, resolution_;
     size_t width_, height_;
     bool map_ready_;
@@ -51,6 +53,7 @@ class AstarPlanner : public rclcpp::Node {
     void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
     void goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+    void newObject (double x, double y, double radius);
 };
 
 #endif // PATHPLANNER_HPP
