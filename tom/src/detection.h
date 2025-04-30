@@ -18,6 +18,7 @@ private:
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
 
+
     nav_msgs::msg::Odometry currentOdom;
     bool firstCent;
     std::vector<geometry_msgs::msg::Point> centres;
@@ -36,6 +37,8 @@ private:
     bool isThisAWall(const std::vector<geometry_msgs::msg::Point> &segment);
     bool isThisACorner(const std::vector<geometry_msgs::msg::Point> &segment);
     bool isThis90(const std::vector<geometry_msgs::msg::Point> &segment);
+    double duplicate_threshold_;
+
 };
 
 #endif // DETECTION_H
