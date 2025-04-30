@@ -5,7 +5,7 @@
 
 class AutoLocalise : public rclcpp::Node {
 public:
-    AutoLocalise() : Node("localisation_node") {
+    AutoLocalise() : Node("localisation_node_initial") {
         publisher_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 10);
         std::this_thread::sleep_for(std::chrono::seconds(1)); // Ensure publisher is fully initialized
         set_initial_pose();
