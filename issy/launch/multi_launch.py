@@ -38,6 +38,17 @@ def generate_launch_description():
         actions=[astar_node]
     )
 
+    # 6) Run object detection
+    detection_node = Node(
+        package='tom',
+        executable='detection_node',
+        output='screen'
+    )
+    delayed_detection = TimerAction(
+        period=space + 0.0,
+        actions=[detection_node]
+    )
+
     # 3) Bringup Nav2 after 5m10s (310s)
     map_file = os.path.join(
         os.environ['HOME'], 'ros2_ws', 'src', 'waitforme', 'GalleryMapHD.yaml'
@@ -63,7 +74,7 @@ def generate_launch_description():
         }.items()
     )
     delayed_nav2 = TimerAction(
-        period=space + 10.0,
+        period=space + 20.0,
         actions=[nav2_bringup]
     )
 
@@ -87,30 +98,19 @@ def generate_launch_description():
         }.items()
     )
     delayed_rviz = TimerAction(
-        period=space + 20.0,
+        period=space + 30.0,
         actions=[rviz_launch]
     )
 
     # 5) Run localization node
-    localization_node = Node(
+    localisation_node = Node(
         package='tom',
         executable='localisation_node',
         output='screen'
     )
-    delayed_localization = TimerAction(
-        period=space + 30.0,
-        actions=[localization_node]
-    )
-
-    # 6) Run object detection
-    detection_node = Node(
-        package='tom',
-        executable='detection_node',
-        output='screen'
-    )
-    delayed_localization = TimerAction(
+    delayed_localisation = TimerAction(
         period=space + 40.0,
-        actions=[localization_node]
+        actions=[localisation_node]
     )
 
     # 6) Finally run movementlogic node after 5m40s (340s)
@@ -130,6 +130,7 @@ def generate_launch_description():
         delayed_astar,
         delayed_nav2,
         delayed_rviz,
-        delayed_localization,
+        delayed_localisation,
+        delayed_detection,
         delayed_movement,
     ])

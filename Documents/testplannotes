@@ -1,0 +1,65 @@
+system level plans
+
+
+TEST 1: ONE TURTLEBOT CAN TRAVEL TO MULTIPLE GOALS IN A QUEUE USING ASTAR - ISSY+ANDY
+requirments
+- goal queue working, astar working, nodes communicating
+assumptions
+- localisation works
+test procedure
+- 
+pass fail results/criteria
+- 
+resources
+- 
+
+
+TEST 2: MECHANICAL INTEGRATION - HOLDING/RECEIVING DRINKS - TEAM
+requirments
+- 
+assumptions
+- 
+test procedure
+- 
+pass fail results/criteria
+- 
+resources
+-
+
+TEST 3: ONE TURTLEBOT CAN LOCALISE IN A REAL WORLD RECENTLY MAPPED ENVIRONMENT - TOM 
+requirments
+- 
+assumptions
+- 
+test procedure
+- 
+pass fail results/criteria
+- 
+resources
+-
+
+
+TEST 4: TWO ROBOTS CAN EXIST IN THE SAME ENVIRONMENT AND GIVE SEPARATE STATUS UPDATES/COMMS - ISSY + HALLIE
+requirments
+- 
+assumptions
+- 
+test procedure
+- 
+pass fail results/criteria
+- 
+resources
+-
+
+
+TEST 5: TWO ROBOTS CAN TRAVEL TO SEPARATE GOALS IN THE QUEUE, AND PATH PLAN WITHOUT INTERFERING WITH EACH OTHER
+requirments
+- 
+assumptions
+- 
+test procedure
+- 
+pass fail results/criteria
+- 
+resources
+-
