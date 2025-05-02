@@ -166,7 +166,7 @@ void ObjDetect::detectCylinder(const std::vector<geometry_msgs::msg::Point> &seg
             geometry_msgs::msg::Point centre = findCentre(p1, p3, targetRadius);
             
             if (std::isnan(centre.x) || std::isnan(centre.y) || std::isnan(centre.z)) {
-                RCLCPP_WARN(this->get_logger(), "Skipping marker: detected NaN in center coordinates.");
+                // RCLCPP_WARN(this->get_logger(), "Skipping marker: detected NaN in center coordinates.");
                 return;
             }
 
@@ -216,7 +216,7 @@ void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segme
     {
         geometry_msgs::msg::Point corner = p2;
         if (std::isnan(corner.x) || std::isnan(corner.y) || std::isnan(corner.z)) {
-            RCLCPP_WARN(this->get_logger(), "Skipping marker: detected NaN in square corner coordinates.");
+            // RCLCPP_WARN(this->get_logger(), "Skipping marker: detected NaN in square corner coordinates.");
             return;
         }
         
