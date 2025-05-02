@@ -8,7 +8,7 @@ from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
-    space = 20.0
+    space = 10.0
     # 0) Set TurtleBot3 model environment variable
     set_model = SetEnvironmentVariable(
         name='TURTLEBOT3_MODEL',

@@ -207,7 +207,7 @@ void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segme
     double sideA = hypot(p2.x - p1.x, p2.y - p1.y);
     double sideB = hypot(p3.x - p2.x, p3.y - p2.y);
 
-    double targetLength = 0.3;
+    double targetLength = 0.25;
     double tolerance = 0.05;
 
     if (isThis90(segment) &&
