@@ -34,13 +34,13 @@ def generate_launch_description():
 
     # Names and poses of the robots
     robots = [
-        {'name': 'tb1', 'x_pose': '3.5', 'y_pose': '3.2', 'z_pose': 0.01},
-        {'name': 'tb2', 'x_pose': '3.5', 'y_pose': '2.5', 'z_pose': 0.01},
+        {'name': 'tb1', 'x_pose': '3.0', 'y_pose': '3.0', 'z_pose': 0.01},
+        {'name': 'tb2', 'x_pose': '3.0', 'y_pose': '1.8', 'z_pose': 0.01},
         # ...
         # ...
         ]
 
-    TURTLEBOT3_MODEL = 'waffle_pi'
+    TURTLEBOT3_MODEL = 'waffle'
 
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
     declare_use_sim_time = DeclareLaunchArgument(

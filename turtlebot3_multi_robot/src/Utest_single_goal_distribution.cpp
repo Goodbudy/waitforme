@@ -27,8 +27,8 @@ int main(int argc, char** argv) {
         executor.spin();
     });
 
-    auto goal1 = create_goal(1.5, -0.5);  // for tb1
-    auto goal2 = create_goal(1.5, 0.5);   // for tb2
+    auto goal1 = create_goal(2.0, 2.5);  // for tb1
+    auto goal2 = create_goal(1.0, 0.8);   // for tb2
 
     rclcpp::sleep_for(std::chrono::seconds(5));
 

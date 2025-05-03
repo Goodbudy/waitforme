@@ -23,10 +23,10 @@ void run_phase(
     const std::shared_ptr<GoalManager>& manager,
     const std::shared_ptr<TurtleBot>& bot)
 {
-    bot->setHomePosition(start_pose.pose.position.x, start_pose.pose.position.y);
-    bot->setAtHome(true);  // Reset to home status
+    //bot->setHomePosition(start_pose.pose.position.x, start_pose.pose.position.y);
+    //bot->setAtHome(true);  // Reset to home status
 
-    manager->register_bot(bot->getName(), bot);
+    // manager->register_bot(bot->getName(), bot);
     manager->queue_goal(bot->getName(), goal_pose);
 
     rclcpp::Rate rate(10.0); // 10Hz update rate
@@ -41,8 +41,10 @@ int main(int argc, char** argv) {
     rclcpp::init(argc, argv);
 
     auto manager = std::make_shared<GoalManager>();
-    auto node = std::make_shared<rclcpp::Node>("tb2_node");
-    auto bot = std::make_shared<TurtleBot>("tb2", node);
+    auto node = std::make_shared<rclcpp::Node>("tb1_node");
+    auto bot = std::make_shared<TurtleBot>("tb1", node);
+
+    manager->register_bot(bot->getName(), bot);
 
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(manager);
@@ -52,13 +54,15 @@ int main(int argc, char** argv) {
         executor.spin();
     });
 
-    geometry_msgs::msg::PoseStamped home = create_goal(3.5, 3.2, 0.0);
+    geometry_msgs::msg::PoseStamped home = create_goal(3.0, 3.0, 0.0);
     std::vector<geometry_msgs::msg::PoseStamped> task_goals = {
         create_goal(2.0, 2.5, 0.0),
         create_goal(1.0, 0.8, 0.0)
     };
 
     geometry_msgs::msg::PoseStamped current_pose = home;
+
+    bot->setHomePosition(home.pose.position.x, home.pose.position.y);
 
     for (size_t i = 0; i < task_goals.size(); ++i) {
         RCLCPP_INFO(rclcpp::get_logger("main"), "--- PHASE %zu: Going to task ---", 2 * i + 1);
