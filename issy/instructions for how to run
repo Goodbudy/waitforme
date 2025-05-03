@@ -12,6 +12,26 @@ ros2 service call /execute_goals issy/srv/ExecuteGoals "{}"
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Notes:
 - "run all of this in your ros2_ws
 

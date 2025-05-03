@@ -6,6 +6,8 @@
 #include <std_msgs/msg/color_rgba.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 
+
+
 ObjDetect::ObjDetect() : Node("detection_node"), firstCent(true), ct_(0)
 {
     scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
@@ -162,6 +164,11 @@ void ObjDetect::detectCylinder(const std::vector<geometry_msgs::msg::Point> &seg
         if (fabs(R - targetRadius) < tolerance_)
         {
             geometry_msgs::msg::Point centre = findCentre(p1, p3, targetRadius);
+            
+            if (std::isnan(centre.x) || std::isnan(centre.y) || std::isnan(centre.z)) {
+                // RCLCPP_WARN(this->get_logger(), "Skipping marker: detected NaN in center coordinates.");
+                return;
+            }
 
             // New: verify all points lie close to this radius
             bool allCloseToRadius = true;
@@ -200,7 +207,7 @@ void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segme
     double sideA = hypot(p2.x - p1.x, p2.y - p1.y);
     double sideB = hypot(p3.x - p2.x, p3.y - p2.y);
 
-    double targetLength = 0.3;
+    double targetLength = 0.25;
     double tolerance = 0.05;
 
     if (isThis90(segment) &&
@@ -208,7 +215,11 @@ void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segme
         fabs(sideB - targetLength) < tolerance)
     {
         geometry_msgs::msg::Point corner = p2;
-
+        if (std::isnan(corner.x) || std::isnan(corner.y) || std::isnan(corner.z)) {
+            // RCLCPP_WARN(this->get_logger(), "Skipping marker: detected NaN in square corner coordinates.");
+            return;
+        }
+        
         // Optional: check if corner is already known to avoid duplicates
         if (!checkExisting(corner) || firstCent)
         {
@@ -219,8 +230,6 @@ void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segme
 
             // Reuse the cylinder marker for now with a different color or style
             auto marker = produceMarkerCylinder(corner, visualization_msgs::msg::Marker::CUBE, "red");
-
-
             marker_pub_->publish(marker);
         }
     }
@@ -263,9 +272,10 @@ geometry_msgs::msg::Point ObjDetect::findCentre(geometry_msgs::msg::Point P1, ge
 
 bool ObjDetect::checkExisting(geometry_msgs::msg::Point centre)
 {
+    duplicate_threshold_ = 0.5;
     for (const auto &existing_centre : centres)
     {
-        if (hypot(centre.x - existing_centre.x, centre.y - existing_centre.y) < 1)
+        if (hypot(centre.x - existing_centre.x, centre.y - existing_centre.y) < duplicate_threshold_)
             return true;
     }
     return false;

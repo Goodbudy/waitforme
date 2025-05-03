@@ -1,846 +1,415 @@
-// #include "astar_planner.h"
-// #include <iostream>
-// #include <vector>
-// #include <queue>
-// #include <unordered_map>
-// #include <cmath>
-// #include <nav_msgs/msg/occupancy_grid.hpp>
-// #include <opencv2/opencv.hpp>
-// #include <rclcpp/rclcpp.hpp>
-// #include "rclcpp_action/rclcpp_action.hpp"
-// #include "nav_msgs/msg/path.hpp"
-// #include "geometry_msgs/msg/pose_stamped.hpp"
-
-// AstarPlanner::AstarPlanner() : Node("astarplanner")
-// {
-//     occupancy_grid_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
-//         "/map", 10, std::bind(&AstarPlanner::convertToBinaryGrid, this, std::placeholders::_1));
-//     RCLCPP_INFO(this->get_logger(), "Node Started");
-//     path_publisher_ = this->create_publisher<nav_msgs::msg::Path>("planned_path", 10);
-// }
-
-// // Each node represents a point on the grid.
-// // The cost is the distance travelled so far from the start
-// // The heuristic is a function define later that calcualtes the eclidean distance to the goal
-// // Parent points to the previous node
-// // the total cost is how far it has travelled and how far it is from the goal. I.E, low score is good
-
-// struct AstarPlanner::Point
-// {
-//     int x, y;
-//     float cost, heuristic;
-//     Point *parent;
-
-//     Point(int x, int y, float cost, float heuristic, Point *parent = nullptr)
-//         : x(x), y(y), cost(cost), heuristic(heuristic), parent(parent) {}
-
-//     float totalCost() const { return cost + heuristic; }
-// };
-
-// // This function is what is used to figure out what is the highest priority to search the next node.
-// // I.E if this node is a low cost, search from there first
-// struct AstarPlanner::ComparePoint
-// {
-//     bool operator()(const Point *a, const Point *b)
-//     {
-//         return a->totalCost() > b->totalCost();
-//     }
-// };
-
-// // Eclidiean distace from point to point
-// float AstarPlanner::eclidDist(int x1, int y1, int x2, int y2)
-// {
-//     return std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-// }
-
-// void AstarPlanner::convertToBinaryGrid(const nav_msgs::msg::OccupancyGrid &map)
-// {
-//     double startX = 0;
-//     double startY = 0;
-//     double goalX = 0;
-//     double goalY = 1.4;
-//     int width = map.info.width;
-//     int height = map.info.height;
-//     origin_x = map.info.origin.position.x;
-//     origin_y = map.info.origin.position.y;
-//     resolution = map.info.resolution;
-//     RCLCPP_INFO(this->get_logger(), "Map width: %d, Map height: %d", map.info.width, map.info.height);
-//     RCLCPP_INFO(this->get_logger(), "origin x = %.2f, y = %.2f, resolution = %.2f", origin_x, origin_y, resolution);
-//     RCLCPP_INFO(this->get_logger(), "map data size = %zu", map.data.size());
-//     RCLCPP_INFO(this->get_logger(), "map width: %d map height: %d", width, height);
-//     if (map.data.size() != static_cast<size_t>(width) * height)
-//     {
-//         RCLCPP_ERROR(this->get_logger(), "Map data size does not match width * height.");
-//         return; // or handle this gracefully
-//     }
-
-//     RCLCPP_INFO(this->get_logger(), "0");
-//     std::vector<std::vector<int>> binaryGrid(height, std::vector<int>(width, 0));
-//     RCLCPP_INFO(this->get_logger(), "1");
-//     // change this from 70 to width
-//     for (int y = 0; y < height; ++y)
-//     {
-//         // change this from 70 to height
-//         for (int x = 0; x < width; ++x)
-//         {
-//             RCLCPP_INFO(this->get_logger(), "x pos: %d y pos: %d", x, y);
-//             int index = y * width + x;
-//             int value = map.data[index];
-
-//             // Mark as 1 if occupied or unknown
-//             if (value == 100 || value == -1)
-//             {
-//                 binaryGrid[y][x] = 1;
-//                 // RCLCPP_INFO(this->get_logger(), "ocupied");
-//             }
-//             else
-//             {
-//                 binaryGrid[y][x] = 0;
-//                 // RCLCPP_INFO(this->get_logger(), "freespace");
-//             }
-//         }
-//     }
-//     RCLCPP_INFO(this->get_logger(), "convert to binary");
-//     auto gridPath = AstarPlanner::aStarSearch(startX, startY, goalX, goalY, binaryGrid);
-//     std::vector<std::pair<double, double>> worldPath = convertGridToWorld(gridPath);
-//     AstarPlanner::saveGridAsImage(binaryGrid, "Binary Grid", gridPath);
-//     publishPath(worldPath);
-// }
-
-// // currently image is flipped in the x and y axis.
-// void AstarPlanner::saveGridAsImage(const std::vector<std::vector<int>> &grid, const std::string &filename, const std::vector<Point *> &path)
-// {
-//     RCLCPP_INFO(this->get_logger(), "image creating");
-//     int height = grid.size();
-//     int width = grid[0].size();
-
-//     // create an image in colour scale
-//     cv::Mat image(height, width, CV_8UC3);
-
-//     cv::circle(image, cv::Point(0, 0), 3, cv::Scalar(255, 255, 0), -1); // Cyan dot for origin
-
-//     for (int y = 0; y < height; ++y)
-//     {
-//         for (int x = 0; x < width; ++x)
-//         {
-//             if (grid[y][x])
-//             {
-//                 // Obstacle (black)
-//                 image.at<cv::Vec3b>(y, x) = cv::Vec3b(0, 0, 0); // Black for obstacles
-//             }
-//             else
-//             {
-//                 // Free space (white)
-//                 image.at<cv::Vec3b>(y, x) = cv::Vec3b(255, 255, 255); // White for free space
-//             }
-//         }
-//     }
-//     for (const auto &point : path)
-//     {
-//         RCLCPP_INFO(this->get_logger(), "Path point x: %d, Path point y: %d", point->x, point->y);
-//         image.at<cv::Vec3b>(point->y, point->x) = cv::Vec3b(0, 0, 255); // Red (BGR format)
-//     }
-
-//     RCLCPP_INFO(this->get_logger(), "image saved");
-//     std::string filePath = filename + ".png";
-//     cv::Mat rotated;
-//     cv::flip(image, rotated, -1); // Rotate 180°
-//     cv::imwrite(filePath, rotated);
-// }
-
-// std::vector<std::pair<double, double>> AstarPlanner::convertGridToWorld(std::vector<AstarPlanner::Point *> gridPath)
-// {
-//     std::vector<std::pair<double, double>> worldPath;
-//     for (const auto &path : gridPath)
-//     {
-//         double wx = path->x * resolution + origin_x + resolution / 2.0;
-//         double wy = path->y * resolution + origin_y + resolution / 2.0;
-//         worldPath.emplace_back(wx, wy);
-//         RCLCPP_INFO(this->get_logger(), "world path x: %.2f, y: %.2f", wx, wy);
-//     }
-//     return worldPath;
-// }
-
-// void AstarPlanner::publishPath(std::vector<std::pair<double, double>> worldPath)
-// {
-//     nav_msgs::msg::Path rosPath;
-//     rosPath.header.stamp = this->get_clock()->now();
-//     rosPath.header.frame_id = "map"; // Make sure it matches your TF
-
-//     for (const auto &[x, y] : worldPath)
-//     {
-//         geometry_msgs::msg::PoseStamped pose;
-//         pose.header.stamp = this->get_clock()->now();
-//         pose.header.frame_id = "map"; // Consistency with the path header
-
-//         pose.pose.position.x = x;
-//         pose.pose.position.y = y;
-//         pose.pose.position.z = 0.0;
-
-//         pose.pose.orientation.w = 1.0; // Neutral orientation
-
-//         rosPath.poses.push_back(pose);
-//     }
-
-//     // Publish the path
-//     path_publisher_->publish(rosPath);
-//     RCLCPP_INFO(this->get_logger(), "Published world path with %zu points", rosPath.poses.size());
-// }
-
-// // Impliment A* algorithim. Take an initial start X and Y positon, a goal X and Y Position and a map
-// // NOTE: x and y positions are relative to the Rviz map, internal conversion are done to change positions to grid locations
-// std::vector<AstarPlanner::Point *> AstarPlanner::aStarSearch(double startX, double startY, double goalX, double goalY, std::vector<std::vector<int>> &grid)
-// {
-//     std::priority_queue<Point *, std::vector<Point *>, ComparePoint> openList;
-//     std::unordered_map<int, Point *> visited;
-
-//     int gridStartX = (startX - origin_x) / resolution;
-//     int gridStartY = (startY - origin_y) / resolution;
-//     int gridGoalX = (goalX - origin_x) / resolution;
-//     int gridGoalY = (goalY - origin_y) / resolution;
-//     int width = grid[0].size(); // Needed for visited key calculation
-//     RCLCPP_INFO(this->get_logger(), "start x = %.2f, y = %.2f, grid start x = %d, y = %d ", startX, startY, gridStartX, gridStartY);
-//     RCLCPP_INFO(this->get_logger(), "goal x = %.2f, y = %.2f, grid goal x = %d, y = %d ", goalX, goalY, gridGoalX, gridGoalY);
-//     RCLCPP_INFO(this->get_logger(), "Map Resolution = %.2f", resolution);
-
-//     // Check start and goal validity
-//     if (grid[gridStartY][gridStartX] != 0 || grid[gridGoalY][gridGoalX] != 0)
-//     {
-//         RCLCPP_ERROR(this->get_logger(), "Start or Goal is in an obstacle");
-//         return {};
-//     }
-
-//     // Create an initial node at the start position with a cost of zero as it hasn't moved yet
-//     Point *start = new Point(gridStartX, gridStartY, 0, eclidDist(gridStartX, gridStartY, gridGoalX, gridGoalY));
-//     openList.push(start);
-
-//     // Define the movements allowed, I.E. up down left and right and diagonals.
-//     std::vector<std::pair<int, int>> directions = {
-//         {0, 1},   // up
-//         {1, 0},   // right
-//         {0, -1},  // down
-//         {-1, 0},  // left
-//         {1, 1},   // top-right
-//         {1, -1},  // bottom-right
-//         {-1, -1}, // bottom-left
-//         {-1, 1}   // top-left
-//     };
-
-//     // Start the A* loop, this will continue to run while there is nodes in the priority queue, as the initial node was pushed back above
-//     while (!openList.empty())
-//     {
-//         Point *current = openList.top();
-//         openList.pop();
-
-//         // Skip if already visited
-//         int currentKey = current->y * width + current->x;
-//         if (visited.count(currentKey))
-//             continue;
-
-//         visited[currentKey] = current;
-
-//         // check if we have reached the goal
-//         if (current->x == gridGoalX && current->y == gridGoalY)
-//         {
-
-//             // Reconstruct path
-//             std::vector<Point *> path;
-//             while (current)
-//             {
-//                 // RCLCPP_INFO(this->get_logger(), "New Node");
-//                 path.push_back(current);
-//                 current = current->parent;
-//             }
-//             return path;
-//         }
-//         // Generate Neighbour nodes
-//         for (auto [dx, dy] : directions)
-//         {
-//             int nx = current->x + dx;
-//             int ny = current->y + dy;
-//             // Check if the neighbour node is valid I.E within the bounds of the world and not an obstacle
-//             if (nx >= 0 && ny >= 0 && ny < static_cast<int>(grid.size()) && nx < static_cast<int>(grid[0].size()) && grid[ny][nx] == 0)
-//             {
-//                 if (dx != 0 && dy != 0)
-//                 {
-//                     if (grid[current->y][current->x + dx] != 0 || grid[current->y + dy][current->x] != 0)
-//                     {
-//                         continue; // Don't allow diagonal if either adjacent cardinal cell is an obstacle
-//                     }
-//                 }
-//                 int neighborKey = ny * width + nx;
-//                 if (!visited.count(neighborKey))
-//                 {
-//                     // cost to move, regualr left right up and down cost 1, diagonals as they are a further away cost 1.14
-//                     float moveCost = (dx == 0 || dy == 0) ? 1.0f : std::sqrt(2.0f);
-//                     float newCost = current->cost + moveCost;
-//                     Point *neighbor = new Point(nx, ny, newCost, eclidDist(nx, ny, gridGoalX, gridGoalY), current);
-//                     // RCLCPP_ERROR(this->get_logger(), "Bad Node");
-//                     openList.push(neighbor);
-//                 }
-//             }
-//         }
-//     }
-//     return {};
-// }
-
-// // Main function to test A*
-// int main(int argc, char *argv[])
-// {
-//     // std::vector<std::vector<int>> grid = {
-//     //     {0, 0, 0, 0, 1},
-//     //     {0, 1, 1, 0, 1},
-//     //     {0, 0, 0, 0, 0},
-//     //     {1, 1, 0, 1, 1},
-//     //     {0, 0, 0, 0, 0}
-//     // };
-
-//     // auto path = aStarSearch(0, 0, 4, 4, grid);
-
-//     // for (auto node : path) {
-//     //     std::cout << "(" << node->x << ", " << node->y << ") <- ";
-//     // }
-//     // std::cout << "Start\n";
-
-//     rclcpp::init(argc, argv);
-//     rclcpp::spin(std::make_shared<AstarPlanner>());
-//     rclcpp::shutdown();
-//     return 0;
-
-//     return 0;
-// }
-
-
-
-
-
-
-
-
-// astar_planner.cpp
-
-// #include <rclcpp/rclcpp.hpp>
-// #include <nav_msgs/msg/occupancy_grid.hpp>
-// #include <nav_msgs/msg/path.hpp>
-// #include <geometry_msgs/msg/pose_stamped.hpp>
-// #include <nav_msgs/msg/odometry.hpp>
-// #include <opencv2/opencv.hpp>      // (retained from your original includes)
-// #include <vector>
-// #include <queue>
-// #include <unordered_map>
-// #include <algorithm>
-// #include <cmath>
-
-// class AstarPlanner : public rclcpp::Node
-// {
-// public:
-//     AstarPlanner()
-//     : Node("astar_planner"),
-//       map_ready_(false),
-//       current_x_(0.0), current_y_(0.0)
-//     {
-//         map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
-//             "map", 10,
-//             std::bind(&AstarPlanner::mapCallback, this, std::placeholders::_1)
-//         );
-
-//         odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
-//             "odom", 10,
-//             std::bind(&AstarPlanner::odomCallback, this, std::placeholders::_1)
-//         );
-
-//         auto goal_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
-//         goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
-//             "astar_goal", goal_qos,
-//             std::bind(&AstarPlanner::goalCallback, this, std::placeholders::_1)
-//         );
-
-//         path_pub_ = create_publisher<nav_msgs::msg::Path>("planned_path", 10);
-
-//         RCLCPP_INFO(get_logger(), "AstarPlanner node started");
-//     }
-
-// private:
-//     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
-//     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr     odom_sub_;
-//     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
-//     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr           path_pub_;
-
-//     std::vector<std::vector<int>> grid_;
-//     double origin_x_, origin_y_, resolution_;
-//     size_t width_, height_;
-//     bool map_ready_;
-//     double current_x_, current_y_;
-
-//     struct Point {
-//         int x, y;
-//         float cost, heuristic;
-//         Point* parent;
-//         Point(int x_, int y_, float c_, float h_, Point* p_=nullptr)
-//          : x(x_), y(y_), cost(c_), heuristic(h_), parent(p_) {}
-//         float totalCost() const { return cost + heuristic; }
-//     };
-
-//     struct ComparePoint {
-//         bool operator()(const Point* a, const Point* b) const {
-//             return a->totalCost() > b->totalCost();
-//         }
-//     };
-
-//     void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
-//     {
-//         width_      = msg->info.width;
-//         height_     = msg->info.height;
-//         origin_x_   = msg->info.origin.position.x;
-//         origin_y_   = msg->info.origin.position.y;
-//         resolution_ = msg->info.resolution;
-
-//         grid_.assign(height_, std::vector<int>(width_, 0));
-//         for (size_t y = 0; y < height_; ++y) {
-//             for (size_t x = 0; x < width_; ++x) {
-//                 int idx = y * width_ + x;
-//                 int val = msg->data[idx];
-//                 grid_[y][x] = (val == 100 || val == -1) ? 1 : 0;
-//             }
-//         }
-//         map_ready_ = true;
-//         RCLCPP_INFO(get_logger(), "Map received: %zux%zu", width_, height_);
-//     }
-
-//     void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
-//     {
-//         current_x_ = msg->pose.pose.position.x;
-//         current_y_ = msg->pose.pose.position.y;
-//     }
-
-//     void goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
-//     {
-//         if (!map_ready_) {
-//             RCLCPP_WARN(get_logger(), "Map not ready, cannot plan");
-//             return;
-//         }
-//         double gx = msg->pose.position.x;
-//         double gy = msg->pose.position.y;
-//         RCLCPP_INFO(get_logger(),
-//                     "Planning path from (%.2f, %.2f) to (%.2f, %.2f)",
-//                     current_x_, current_y_, gx, gy);
-
-//         auto grid_path  = aStarSearch(current_x_, current_y_, gx, gy);
-//         auto world_path = convertGridToWorld(grid_path);
-//         std::reverse(world_path.begin(), world_path.end());
-//         publishPath(world_path);
-//     }
-
-//     std::vector<Point*> aStarSearch(double sx_d, double sy_d, double gx_d, double gy_d)
-//     {
-//         int sx = int((sx_d - origin_x_) / resolution_);
-//         int sy = int((sy_d - origin_y_) / resolution_);
-//         int gx = int((gx_d - origin_x_) / resolution_);
-//         int gy = int((gy_d - origin_y_) / resolution_);
-
-//         std::priority_queue<Point*, std::vector<Point*>, ComparePoint> open;
-//         std::unordered_map<int,Point*> visited;
-//         open.push(new Point(sx, sy, 0.0f,
-//                             euclidDist(sx, sy, gx, gy)));
-
-//         int dirs[8][2] = {{0,1},{1,0},{0,-1},{-1,0},
-//                           {1,1},{1,-1},{-1,-1},{-1,1}};
-//         while (!open.empty()) {
-//             auto cur = open.top(); open.pop();
-//             int key = cur->y * width_ + cur->x;
-//             if (visited.count(key)) {
-//                 delete cur;
-//                 continue;
-//             }
-//             visited[key] = cur;
-//             if (cur->x==gx && cur->y==gy) {
-//                 std::vector<Point*> path;
-//                 while (cur) {
-//                     path.push_back(cur);
-//                     cur = cur->parent;
-//                 }
-//                 return path;
-//             }
-//             for (auto &d : dirs) {
-//                 int nx = cur->x + d[0], ny = cur->y + d[1];
-//                 if (nx>=0 && ny>=0 && nx<int(width_) && ny<int(height_) &&
-//                     grid_[ny][nx]==0)
-//                 {
-//                     // prevent corner‐cutting
-//                     if (d[0] && d[1]) {
-//                         if (grid_[cur->y][cur->x + d[0]] ||
-//                             grid_[cur->y + d[1]][cur->x]) continue;
-//                     }
-//                     int nkey = ny*width_ + nx;
-//                     if (!visited.count(nkey)) {
-//                         float step_cost = (d[0]==0||d[1]==0)?1.0f:std::sqrt(2.0f);
-//                         open.push(new Point(nx, ny,
-//                                             cur->cost + step_cost,
-//                                             euclidDist(nx,ny,gx,gy),
-//                                             cur));
-//                     }
-//                 }
-//             }
-//         }
-//         return {};
-//     }
-
-//     std::vector<std::pair<double,double>> convertGridToWorld(const std::vector<Point*>& gp)
-//     {
-//         std::vector<std::pair<double,double>> wp;
-//         for (auto p : gp) {
-//             double wx = p->x * resolution_ + origin_x_ + resolution_/2.0;
-//             double wy = p->y * resolution_ + origin_y_ + resolution_/2.0;
-//             wp.emplace_back(wx, wy);
-//         }
-//         return wp;
-//     }
-
-//     void publishPath(const std::vector<std::pair<double,double>>& wp)
-//     {
-//         nav_msgs::msg::Path msg;
-//         msg.header.stamp    = now();
-//         msg.header.frame_id = "map";
-//         for (auto &pt : wp) {
-//             geometry_msgs::msg::PoseStamped ps;
-//             ps.header = msg.header;
-//             ps.pose.position.x = pt.first;
-//             ps.pose.position.y = pt.second;
-//             ps.pose.orientation.w = 1.0;
-//             msg.poses.push_back(ps);
-//         }
-//         path_pub_->publish(msg);
-//         RCLCPP_INFO(get_logger(), "Published path with %zu points", msg.poses.size());
-//     }
-
-//     float euclidDist(int x1,int y1,int x2,int y2)
-//     {
-//         return std::hypot(x2-x1, y2-y1);
-//     }
-// };
-
-// int main(int argc, char **argv)
-// {
-//     rclcpp::init(argc, argv);
-//     rclcpp::spin(std::make_shared<AstarPlanner>());
-//     rclcpp::shutdown();
-//     return 0;
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// astar_planner.cpp
-
-#include <rclcpp/rclcpp.hpp>
-#include <nav_msgs/msg/occupancy_grid.hpp>
-#include <nav_msgs/msg/path.hpp>
-#include <geometry_msgs/msg/pose_stamped.hpp>
-#include <nav_msgs/msg/odometry.hpp>
-#include <opencv2/opencv.hpp>
+#include "astar_planner.h"
+#include <iostream>
 #include <vector>
 #include <queue>
 #include <unordered_map>
-#include <algorithm>
 #include <cmath>
-#include <string>
+#include <nav_msgs/msg/occupancy_grid.hpp>
+#include <opencv2/opencv.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include "rclcpp_action/rclcpp_action.hpp"
+#include "nav_msgs/msg/path.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
-class AstarPlanner : public rclcpp::Node
+AstarPlanner::AstarPlanner() : Node("astarplanner"), map_ready_(false), current_x_(0.0), current_y_(0.0)
 {
-public:
-    AstarPlanner()
-    : Node("astar_planner"),
-      map_ready_(false),
-      current_x_(0.0), current_y_(0.0)
-    {
-        map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
-            "map", 10,
-            std::bind(&AstarPlanner::mapCallback, this, std::placeholders::_1)
-        );
+    map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
+        "map", 10,
+        std::bind(&AstarPlanner::mapCallback, this, std::placeholders::_1));
 
-        odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
-            "odom", 10,
-            std::bind(&AstarPlanner::odomCallback, this, std::placeholders::_1)
-        );
+    odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
+        "odom", 10,
+        std::bind(&AstarPlanner::odomCallback, this, std::placeholders::_1));
 
-        auto goal_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
-        goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
-            "astar_goal", goal_qos,
-            std::bind(&AstarPlanner::goalCallback, this, std::placeholders::_1)
-        );
+    auto goal_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
+    goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
+        "astar_goal", goal_qos,
+        std::bind(&AstarPlanner::goalCallback, this, std::placeholders::_1));
 
-        path_pub_ = create_publisher<nav_msgs::msg::Path>("planned_path", 10);
+    path_pub_ = create_publisher<nav_msgs::msg::Path>("planned_path", 10);
 
-        RCLCPP_INFO(get_logger(), "AstarPlanner node started");
-    }
+    path_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("astar_path", 10);
 
-private:
-    // ROS interfaces
-    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
-    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr     odom_sub_;
-    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
-    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr           path_pub_;
+    RCLCPP_INFO(get_logger(), "AstarPlanner node started");
+};
 
-    // Grid and pose data
-    std::vector<std::vector<int>> grid_;
-    double origin_x_, origin_y_, resolution_;
-    size_t width_, height_;
-    bool map_ready_;
-    double current_x_, current_y_;
+// Each node represents a point on the grid.
+// The cost is the distance travelled so far from the start
+// The heuristic is a function define later that calcualtes the eclidean distance to the goal
+// Parent points to the previous node
+// the total cost is how far it has travelled and how far it is from the goal. I.E, low score is good
 
-    // A* helper struct
-    struct Point {
-        int x, y;
-        float cost, heuristic;
-        Point* parent;
-        Point(int x_, int y_, float c_, float h_, Point* p_ = nullptr)
-         : x(x_), y(y_), cost(c_), heuristic(h_), parent(p_) {}
-        float totalCost() const { return cost + heuristic; }
-    };
-    struct ComparePoint {
-        bool operator()(const Point* a, const Point* b) const {
-            return a->totalCost() > b->totalCost();
-        }
-    };
-
-// In your class definition, add:
-int inflation_radius_cells_{2};  // ← adjust this to taste (e.g. 2–5 cells)
-
-void inflateObstacles()
+struct AstarPlanner::Point
 {
-    // copy the original grid so we don’t cascade-inflate
-    auto original = grid_;
-    int H = grid_.size(), W = grid_[0].size();
-    for(int y = 0; y < H; ++y) {
-      for(int x = 0; x < W; ++x) {
-        if (original[y][x] == 1) {
-          // mark every cell within a square of side 2*r+1
-          for(int dy = -inflation_radius_cells_; dy <= inflation_radius_cells_; ++dy) {
-            for(int dx = -inflation_radius_cells_; dx <= inflation_radius_cells_; ++dx) {
-              int yy = y + dy, xx = x + dx;
-              if (yy >= 0 && yy < H && xx >= 0 && xx < W) {
-                // optionally: only within a circle: if (dx*dx + dy*dy <= inflation_radius_cells_*inflation_radius_cells_)
-                grid_[yy][xx] = 1;
-              }
-            }
-          }
-        }
-      }
-    }
-}
+    int x, y;
+    float cost, heuristic;
+    Point *parent;
 
+    Point(int x, int y, float cost, float heuristic, Point *parent = nullptr)
+        : x(x), y(y), cost(cost), heuristic(heuristic), parent(parent) {}
 
-    void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+    float totalCost() const { return cost + heuristic; }
+};
+
+// This function is what is used to figure out what is the highest priority to search the next node.
+// I.E if this node is a low cost, search from there first
+struct AstarPlanner::ComparePoint
+{
+    bool operator()(const Point *a, const Point *b)
     {
-        width_      = msg->info.width;
-        height_     = msg->info.height;
-        origin_x_   = msg->info.origin.position.x;
-        origin_y_   = msg->info.origin.position.y;
-        resolution_ = msg->info.resolution;
-
-        grid_.assign(height_, std::vector<int>(width_, 0));
-        for (size_t y = 0; y < height_; ++y) {
-            for (size_t x = 0; x < width_; ++x) {
-                int idx = y * width_ + x;
-                int val = msg->data[idx];
-                grid_[y][x] = (val == 100 || val == -1) ? 1 : 0;
-            }
-        }
-        map_ready_ = true;
-        RCLCPP_INFO(get_logger(), "Map received: %zux%zu", width_, height_);
-        inflateObstacles();
-        RCLCPP_INFO(get_logger(), "Inflated obstacles by %d cells", inflation_radius_cells_);
-
-    }
-
-    void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
-    {
-        current_x_ = msg->pose.pose.position.x;
-        current_y_ = msg->pose.pose.position.y;
-    }
-
-    void goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
-    {
-        if (!map_ready_) {
-            RCLCPP_WARN(get_logger(), "Map not ready, cannot plan");
-            return;
-        }
-
-        double gx = msg->pose.position.x;
-        double gy = msg->pose.position.y;
-        RCLCPP_INFO(get_logger(),
-                    "Planning path from (%.2f, %.2f) → (%.2f, %.2f)",
-                    current_x_, current_y_, gx, gy);
-
-        // 1) A* search on grid:
-        auto grid_path = aStarSearch(current_x_, current_y_, gx, gy);
-
-        // 2) Save occupancy + path to PNG:
-        saveGridAsImage(grid_, "astar_map", grid_path);
-
-        // 3) Convert and publish the world‐frame path:
-        auto world_path = convertGridToWorld(grid_path);
-        std::reverse(world_path.begin(), world_path.end());
-        publishPath(world_path);
-    }
-
-    std::vector<Point*> aStarSearch(
-        double sx_d, double sy_d, double gx_d, double gy_d)
-    {
-        int sx = int((sx_d - origin_x_) / resolution_);
-        int sy = int((sy_d - origin_y_) / resolution_);
-        int gx = int((gx_d - origin_x_) / resolution_);
-        int gy = int((gy_d - origin_y_) / resolution_);
-
-        std::priority_queue<Point*, std::vector<Point*>, ComparePoint> open;
-        std::unordered_map<int,Point*> visited;
-        open.push(new Point(sx, sy, 0.0f, euclidDist(sx, sy, gx, gy)));
-
-        int dirs[8][2] = {{0,1},{1,0},{0,-1},{-1,0},
-                          {1,1},{1,-1},{-1,-1},{-1,1}};
-
-        while (!open.empty()) {
-            auto cur = open.top(); open.pop();
-            int key = cur->y * width_ + cur->x;
-            if (visited.count(key)) {
-                delete cur;
-                continue;
-            }
-            visited[key] = cur;
-
-            if (cur->x == gx && cur->y == gy) {
-                std::vector<Point*> path;
-                while (cur) {
-                    path.push_back(cur);
-                    cur = cur->parent;
-                }
-                return path;
-            }
-
-            for (auto &d : dirs) {
-                int nx = cur->x + d[0], ny = cur->y + d[1];
-                if (nx>=0 && ny>=0 && nx<int(width_) && ny<int(height_) &&
-                    grid_[ny][nx] == 0)
-                {
-                    // corner-cut prevention
-                    if (d[0] && d[1]) {
-                        if (grid_[cur->y][cur->x + d[0]] ||
-                            grid_[cur->y + d[1]][cur->x]) continue;
-                    }
-                    int nkey = ny * width_ + nx;
-                    if (!visited.count(nkey)) {
-                        float step = (d[0]==0||d[1]==0) ? 1.0f : std::sqrt(2.0f);
-                        open.push(new Point(nx, ny,
-                                            cur->cost + step,
-                                            euclidDist(nx, ny, gx, gy),
-                                            cur));
-                    }
-                }
-            }
-        }
-        return {};
-    }
-
-    std::vector<std::pair<double,double>> convertGridToWorld(
-        const std::vector<Point*>& gp)
-    {
-        std::vector<std::pair<double,double>> wp;
-        for (auto p : gp) {
-            double wx = p->x * resolution_ + origin_x_ + resolution_/2.0;
-            double wy = p->y * resolution_ + origin_y_ + resolution_/2.0;
-            wp.emplace_back(wx, wy);
-        }
-        return wp;
-    }
-
-    void publishPath(const std::vector<std::pair<double,double>>& wp)
-    {
-        nav_msgs::msg::Path msg;
-        msg.header.stamp    = now();
-        msg.header.frame_id = "map";
-        for (auto &pt : wp) {
-            geometry_msgs::msg::PoseStamped ps;
-            ps.header = msg.header;
-            ps.pose.position.x = pt.first;
-            ps.pose.position.y = pt.second;
-            ps.pose.orientation.w = 1.0;
-            msg.poses.push_back(ps);
-        }
-        path_pub_->publish(msg);
-        RCLCPP_INFO(get_logger(), "Published path with %zu points", msg.poses.size());
-    }
-
-    float euclidDist(int x1,int y1,int x2,int y2)
-    {
-        return std::hypot(x2 - x1, y2 - y1);
-    }
-
-    // --- image dump helper ---
-    void saveGridAsImage(
-        const std::vector<std::vector<int>> &grid,
-        const std::string &filename,
-        const std::vector<Point *>   &path)
-    {
-        RCLCPP_INFO(get_logger(), "Saving grid+path to %s.png", filename.c_str());
-
-        int h = grid.size(), w = grid[0].size();
-        cv::Mat img(h, w, CV_8UC3);
-
-        // draw obstacles & free space
-        for (int y = 0; y < h; ++y) {
-            for (int x = 0; x < w; ++x) {
-                if (grid[y][x])
-                    img.at<cv::Vec3b>(y,x) = {0,0,0};       // black
-                else
-                    img.at<cv::Vec3b>(y,x) = {255,255,255}; // white
-            }
-        }
-
-        // mark the path in red
-        for (auto *pt : path) {
-            if (pt->y >= 0 && pt->y < h && pt->x >= 0 && pt->x < w)
-                img.at<cv::Vec3b>(pt->y, pt->x) = {0,0,255};
-        }
-
-        // flip/rotate if you prefer
-        cv::Mat flipped;
-        cv::flip(img, flipped, -1);
-        cv::imwrite(filename + ".png", flipped);
-
-        RCLCPP_INFO(get_logger(), "Image written to %s.png", filename.c_str());
+        return a->totalCost() > b->totalCost();
     }
 };
 
-int main(int argc, char **argv)
+void AstarPlanner::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+{
+    width_ = msg->info.width;
+    height_ = msg->info.height;
+    origin_x_ = msg->info.origin.position.x;
+    origin_y_ = msg->info.origin.position.y;
+    resolution_ = msg->info.resolution;
+
+    grid_.assign(height_, std::vector<int>(width_, 0));
+    for (size_t y = 0; y < height_; ++y)
+    {
+        for (size_t x = 0; x < width_; ++x)
+        {
+            int idx = y * width_ + x;
+            int val = msg->data[idx];
+            grid_[y][x] = (val == 100 || val == -1) ? 1 : 0;
+        }
+    }
+    original_grid_ = grid_;
+    object_grid_ = grid_;
+    map_ready_ = true;
+    RCLCPP_INFO(get_logger(), "Map received: %zux%zu", width_, height_);
+    // inflateObstacles();
+    // RCLCPP_INFO(get_logger(), "Inflated obstacles by %d cells", inflation_radius_cells_);
+}
+
+void AstarPlanner::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
+{
+    current_x_ = msg->pose.pose.position.x;
+    current_y_ = msg->pose.pose.position.y;
+    // RCLCPP_INFO(get_logger(), "Odom Callback Current x:  %.2f, Current y: %.2f", current_x_, current_y_);
+}
+
+void AstarPlanner::goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
+{
+    if (!map_ready_)
+    {
+        RCLCPP_WARN(get_logger(), "Map not ready, cannot plan");
+        return;
+    }
+
+    double gx = msg->pose.position.x;
+    double gy = msg->pose.position.y;
+    RCLCPP_INFO(get_logger(),
+                "Planning path from (%.2f, %.2f) → (%.2f, %.2f)",
+                current_x_, current_y_, gx, gy);
+
+    // 1) A* search on grid:
+    // apply the buffer in m
+    // pretend object is there
+    newObject(2,2.4,3);
+    obstacle_buffer_radius_ = 0.1;
+    applyObstacleBuffering(obstacle_buffer_radius_);
+    auto grid_path = aStarSearch(current_x_, current_y_, gx, gy);
+
+    // 2) Save occupancy + path to PNG:
+    saveGridAsImage(grid_, "astar_map", grid_path);
+
+    // 3) Convert and publish the world‐frame path:
+    std::vector<std::pair<double, double>> world_path = convertGridToWorld(grid_path);
+    std::reverse(world_path.begin(), world_path.end());
+    publishPath(world_path);
+    publishPathToRViz(world_path);
+}
+
+// Eclidiean distace from point to point
+float AstarPlanner::eclidDist(int x1, int y1, int x2, int y2)
+{
+    return std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+}
+
+// currently image is flipped in the x and y axis.
+void AstarPlanner::saveGridAsImage(const std::vector<std::vector<int>> &grid, const std::string &filename, const std::vector<Point *> &path)
+{
+    RCLCPP_INFO(this->get_logger(), "image creating");
+
+    // create an image in colour scale
+    cv::Mat image(height_, width_, CV_8UC3);
+
+    cv::circle(image, cv::Point(0, 0), 3, cv::Scalar(255, 255, 0), -1); // Cyan dot for origin
+
+    for (size_t y = 0; y < height_; ++y)
+    {
+        for (size_t x = 0; x < width_; ++x)
+        {
+            if (grid[y][x])
+            {
+                // Obstacle (black)
+                image.at<cv::Vec3b>(y, x) = cv::Vec3b(0, 0, 0); // Black for obstacles
+            }
+            else
+            {
+                // Free space (white)
+                image.at<cv::Vec3b>(y, x) = cv::Vec3b(255, 255, 255); // White for free space
+            }
+        }
+    }
+    for (const auto &point : path)
+    {
+        //RCLCPP_INFO(this->get_logger(), "Path point x: %d, Path point y: %d", point->x, point->y);
+        image.at<cv::Vec3b>(point->y, point->x) = cv::Vec3b(0, 0, 255); // Red (BGR format)
+    }
+
+    RCLCPP_INFO(this->get_logger(), "image saved");
+    std::string filePath = filename + ".png";
+    cv::Mat rotated;
+    cv::Mat flip;
+    cv::flip(image, flip, 0); // flip vertically to match map coordinates
+    cv::rotate(flip, rotated, cv::ROTATE_90_COUNTERCLOCKWISE);
+    cv::imwrite(filePath, rotated);
+}
+
+void AstarPlanner::publishPathToRViz(const std::vector<std::pair<double, double>> &world_path)
+{
+    visualization_msgs::msg::MarkerArray marker_array;
+
+    visualization_msgs::msg::Marker line_strip;
+    line_strip.header.frame_id = "map";
+    line_strip.header.stamp = rclcpp::Clock().now();
+    line_strip.ns = "astar_path";
+    line_strip.id = 0;
+    line_strip.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    line_strip.action = visualization_msgs::msg::Marker::ADD;
+    line_strip.scale.x = 0.025; // Thickness
+    line_strip.color.a = 1.0;
+    line_strip.color.r = 1.0;
+    line_strip.color.g = 0.0;
+    line_strip.color.b = 0.0;
+
+    for (const auto &coord : world_path)
+    {
+        geometry_msgs::msg::Point p;
+        p.x = coord.first;
+        p.y = coord.second;
+        p.z = 0.0;
+        line_strip.points.push_back(p);
+    }
+
+    marker_array.markers.push_back(line_strip);
+
+    path_marker_pub_->publish(marker_array);
+    RCLCPP_INFO(this->get_logger(), "Published path as MarkerArray to RViz with %zu points", world_path.size());
+}
+
+
+std::vector<std::pair<double, double>> AstarPlanner::convertGridToWorld(std::vector<AstarPlanner::Point *> gridPath)
+{
+    std::vector<std::pair<double, double>> worldPath;
+    for (const auto &path : gridPath)
+    {
+        double wx = path->x * resolution_ + origin_x_ + resolution_ / 2.0;
+        double wy = path->y * resolution_ + origin_y_ + resolution_ / 2.0;
+        worldPath.emplace_back(wx, wy);
+        //RCLCPP_INFO(this->get_logger(), "world path x: %.2f, y: %.2f", wx, wy);
+    }
+    return worldPath;
+}
+
+void AstarPlanner::publishPath(std::vector<std::pair<double, double>> worldPath)
+{
+    nav_msgs::msg::Path rosPath;
+    rosPath.header.stamp = this->get_clock()->now();
+    rosPath.header.frame_id = "map"; // Make sure it matches your TF
+
+    for (const auto &[x, y] : worldPath)
+    {
+        geometry_msgs::msg::PoseStamped pose;
+        pose.header.stamp = this->get_clock()->now();
+        pose.header.frame_id = "map"; // Consistency with the path header
+
+        pose.pose.position.x = x;
+        pose.pose.position.y = y;
+        pose.pose.position.z = 0.0;
+
+        pose.pose.orientation.w = 1.0; // Neutral orientation
+
+        rosPath.poses.push_back(pose);
+    }
+
+    // Publish the path
+    path_pub_->publish(rosPath);
+    RCLCPP_INFO(this->get_logger(), "Published world path with %zu points", rosPath.poses.size());
+}
+
+void AstarPlanner::applyObstacleBuffering(double buffer)
+{
+    int buffer_size = static_cast<int>(buffer / resolution_);
+    auto grid = object_grid_;
+
+    RCLCPP_INFO(this->get_logger(), "Buffering");
+    RCLCPP_INFO(this->get_logger(), "Buffer size in cells: %d", buffer_size);
+    RCLCPP_INFO(this->get_logger(), "Original grid cell (10,10) = %d", original_grid_[10][10]);
+
+    int total_obstacles = 0;
+    for (int y = 0; y < grid.size(); ++y)
+        for (int x = 0; x < grid[0].size(); ++x)
+            if (grid[y][x] == 0)
+                total_obstacles++;
+
+    RCLCPP_INFO(this->get_logger(), "Total obstacle cells: %d", total_obstacles);
+
+    for (int y = 0; y < height_; ++y)
+    {
+        for (int x = 0; x < width_; ++x)
+        {
+            if (object_grid_[y][x] == 1) // Only expand around original obstacles and new obstacles
+            {
+                for (int dy = -buffer_size; dy <= buffer_size; ++dy)
+                {
+                    for (int dx = -buffer_size; dx <= buffer_size; ++dx)
+                    {
+                        int nx = x + dx;
+                        int ny = y + dy;
+
+                        if (nx >= 0 && ny >= 0 && ny < height_ && nx < width_)
+                        {
+                            grid_[ny][nx] = 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void AstarPlanner::newObject(double worldx, double worldy, double radius)
+{
+    RCLCPP_INFO(this->get_logger(), "New Object Detected");
+    RCLCPP_INFO(this->get_logger(), "Object XPos: %.2f , YPos: %.2f , Radius %.2f", worldx, worldy, radius);
+    //yes the grid x and y needs to be switched. 
+    int gridx = (worldx - origin_x_ - resolution_/2) / resolution_;
+    int gridy = (worldy - origin_y_ - resolution_/2) / resolution_;;
+
+    RCLCPP_INFO(this->get_logger(), "gridx: %.2f , gridy: %.2f", gridx, gridy);
+
+    for (int dy = -radius; dy <= radius; ++dy)
+                {
+                    for (int dx = -radius; dx <= radius; ++dx)
+                    {
+                        int nx = gridx + dx;
+                        int ny = gridy + dy;
+
+                        if (nx >= 0 && ny >= 0 && ny < height_ && nx < width_)
+                        {
+                            object_grid_[ny][nx] = 1;
+                        }
+                    }
+                }
+
+    //object_grid_[gridx][gridy] = 1;
+}
+// Impliment A* algorithim. Take an initial start X and Y positon, a goal X and Y Position and a map
+// NOTE: x and y positions are relative to the Rviz map, internal conversion are done to change positions to grid locations
+std::vector<AstarPlanner::Point *> AstarPlanner::aStarSearch(double startX, double startY, double goalX, double goalY)
+{
+    std::priority_queue<Point *, std::vector<Point *>, ComparePoint> openList;
+    std::unordered_map<int, Point *> visited;
+
+    int gridStartX = (startX - origin_x_) / resolution_;
+    int gridStartY = (startY - origin_y_) / resolution_;
+    int gridGoalX = (goalX - origin_x_) / resolution_;
+    int gridGoalY = (goalY - origin_y_) / resolution_;
+    RCLCPP_INFO(this->get_logger(), "start x = %.2f, y = %.2f, grid start x = %d, y = %d ", startX, startY, gridStartX, gridStartY);
+    RCLCPP_INFO(this->get_logger(), "goal x = %.2f, y = %.2f, grid goal x = %d, y = %d ", goalX, goalY, gridGoalX, gridGoalY);
+    RCLCPP_INFO(this->get_logger(), "Map Resolution = %.2f", resolution_);
+
+    // Check start and goal validity
+    if (grid_[gridStartY][gridStartX] != 0 || grid_[gridGoalY][gridGoalX] != 0)
+    {
+        RCLCPP_ERROR(this->get_logger(), "Start or Goal is in an obstacle");
+        return {};
+    }
+
+    // Create an initial node at the start position with a cost of zero as it hasn't moved yet
+    Point *start = new Point(gridStartX, gridStartY, 0, eclidDist(gridStartX, gridStartY, gridGoalX, gridGoalY));
+    openList.push(start);
+
+    // Define the movements allowed, I.E. up down left and right and diagonals.
+    std::vector<std::pair<int, int>> directions = {
+        {0, 1},   // up
+        {1, 0},   // right
+        {0, -1},  // down
+        {-1, 0},  // left
+        {1, 1},   // top-right
+        {1, -1},  // bottom-right
+        {-1, -1}, // bottom-left
+        {-1, 1}   // top-left
+    };
+
+    // Start the A* loop, this will continue to run while there is nodes in the priority queue, as the initial node was pushed back above
+    while (!openList.empty())
+    {
+        Point *current = openList.top();
+        openList.pop();
+
+        // Skip if already visited
+        int currentKey = current->y * width_ + current->x;
+        if (visited.count(currentKey))
+            continue;
+
+        visited[currentKey] = current;
+
+        // check if we have reached the goal
+        if (current->x == gridGoalX && current->y == gridGoalY)
+        {
+
+            // Reconstruct path
+            std::vector<Point *> path;
+            while (current)
+            {
+                // RCLCPP_INFO(this->get_logger(), "New Node");
+                path.push_back(current);
+                current = current->parent;
+            }
+            return path;
+        }
+        // Generate Neighbour nodes
+        for (auto [dx, dy] : directions)
+        {
+            int nx = current->x + dx;
+            int ny = current->y + dy;
+            // Check if the neighbour node is valid I.E within the bounds of the world and not an obstacle
+            if (nx >= 0 && ny >= 0 && ny < static_cast<int>(height_) && nx < static_cast<int>(width_) && grid_[ny][nx] == 0)
+            {
+                if (dx != 0 && dy != 0)
+                {
+                    if (grid_[current->y][current->x + dx] != 0 || grid_[current->y + dy][current->x] != 0)
+                    {
+                        continue; // Don't allow diagonal if either adjacent cardinal cell is an obstacle
+                    }
+                }
+                int neighborKey = ny * width_ + nx;
+                if (!visited.count(neighborKey))
+                {
+                    // cost to move, regualr left right up and down cost 1, diagonals as they are a further away cost 1.41
+                    float moveCost = (dx == 0 || dy == 0) ? 1.0f : std::sqrt(2.0f);
+                    float newCost = current->cost + moveCost;
+                    Point *neighbor = new Point(nx, ny, newCost, eclidDist(nx, ny, gridGoalX, gridGoalY), current);
+                    // RCLCPP_ERROR(this->get_logger(), "Bad Node");
+                    openList.push(neighbor);
+                }
+            }
+        }
+    }
+    return {};
+}
+
+// Main function to test A*
+int main(int argc, char *argv[])
 {
     rclcpp::init(argc, argv);
     rclcpp::spin(std::make_shared<AstarPlanner>());

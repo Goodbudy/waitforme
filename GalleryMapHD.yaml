@@ -1,7 +1,7 @@
 image: GalleryMapHD.pgm
 mode: trinary
 resolution: 0.01
-origin: [0.0565, -0.0154, 0]
+origin: [0.0706, -0.0554, 0]
 negate: 0
 occupied_thresh: 0.65
 free_thresh: 0.25
