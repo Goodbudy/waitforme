@@ -17,8 +17,8 @@ private:
         auto msg = geometry_msgs::msg::PoseWithCovarianceStamped();
         msg.header.stamp = this->get_clock()->now();
         msg.header.frame_id = "map";
-        msg.pose.pose.position.x = 1.0;
-        msg.pose.pose.position.y = 0.8;
+        msg.pose.pose.position.x = 3.12;
+        msg.pose.pose.position.y = 3.31;
         msg.pose.pose.orientation.w = 1.0;
         publisher_->publish(msg);
         RCLCPP_INFO(this->get_logger(), "Published initial pose");
