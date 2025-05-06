@@ -18,7 +18,7 @@ find_package(visualization_msgs REQUIRED)
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
 # Create an executable for your localisation node
-add_executable(localisation_node src/localisation_initial.cpp)
+add_executable(localisation_node src/localisation.cpp)
 ament_target_dependencies(localisation_node rclcpp geometry_msgs nav2_msgs std_msgs OpenCV sensor_msgs nav_msgs tf2 tf2_geometry_msgs visualization_msgs)
 
 # Create an executable for the detection node
