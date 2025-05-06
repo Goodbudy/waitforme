@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 import os
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, TimerAction, SetEnvironmentVariable
+from launch.actions import IncludeLaunchDescription, TimerAction, SetEnvironmentVariable, GroupAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch_ros.actions import Node
+from launch_ros.actions import Node, PushRosNamespace
 from ament_index_python.packages import get_package_share_directory
-
 
 def generate_launch_description():
     space = 10.0
-    # 0) Set TurtleBot3 model environment variable
+    
     set_model = SetEnvironmentVariable(
         name='TURTLEBOT3_MODEL',
         value='waffle_pi'
     )
 
-    # 1) Launch Gazebo with Gallery_Test2
     gazebo_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
@@ -27,7 +25,6 @@ def generate_launch_description():
         launch_arguments={}.items()
     )
 
-    # 2) Start the A* planner node after 5 minutes (300s)
     astar_node = Node(
         package='andy',
         executable='astar_planner',
@@ -38,18 +35,16 @@ def generate_launch_description():
         actions=[astar_node]
     )
 
-    # 6) Run object detection
     detection_node = Node(
         package='tom',
         executable='detection_node',
         output='screen'
     )
     delayed_detection = TimerAction(
-        period=space + 0.0,
+        period=space + 10.0,
         actions=[detection_node]
     )
 
-    # 3) Bringup Nav2 after 5m10s (310s)
     map_file = os.path.join(
         os.environ['HOME'], 'ros2_ws', 'src', 'waitforme', 'GalleryMapHD.yaml'
     )
@@ -58,27 +53,33 @@ def generate_launch_description():
         'params',
         'nav2_params.yaml'
     )
-    nav2_bringup = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory('nav2_bringup'),
-                'launch',
-                'bringup_launch.py'
+
+    nav2_bringup = GroupAction(
+        actions=[
+            PushRosNamespace('tb1'),
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(
+                        get_package_share_directory('nav2_bringup'),
+                        'launch',
+                        'bringup_launch.py'
+                    )
+                ),
+                launch_arguments={
+                    'map': map_file,
+                    'use_sim_time': 'True',
+                    'params_file': params_file,
+                    'autostart': 'True'
+                }.items()
             )
-        ),
-        launch_arguments={
-            'map': map_file,
-            'use_sim_time': 'True',
-            'params_file': params_file,
-            'autostart': 'True'
-        }.items()
+        ]
     )
+
     delayed_nav2 = TimerAction(
         period=space + 20.0,
         actions=[nav2_bringup]
     )
 
-    # 4) Open RViz after 5m20s (320s)
     rviz_config = os.path.join(
         get_package_share_directory('nav2_bringup'),
         'rviz',
@@ -102,7 +103,6 @@ def generate_launch_description():
         actions=[rviz_launch]
     )
 
-    # 5) Run localization node
     localisation_node = Node(
         package='tom',
         executable='localisation_node',
@@ -113,7 +113,6 @@ def generate_launch_description():
         actions=[localisation_node]
     )
 
-    # 6) Finally run movementlogic node after 5m40s (340s)
     movement_node = Node(
         package='issy',
         executable='movementlogic',
