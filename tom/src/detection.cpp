@@ -63,43 +63,22 @@ std::vector<std::vector<geometry_msgs::msg::Point>> ObjDetect::countSegments(con
             }
             else
             {
-                /*
-                if (segStarted && !currentSegment.empty())
-                {
-                    segmentVector.push_back(currentSegment);
-                    if (!isThisAWall(currentSegment) && !isThisACorner(currentSegment))
-                        detectCylinder(currentSegment);
-                    else if (!isThisAWall(currentSegment) && isThis90(currentSegment))
-                        detectSquare(currentSegment);
-                    
-                    segStarted = false;
-                }
-                */
+
                 break;
             }
             i++;
         }
-        /*
-        if (segStarted && !currentSegment.empty())
-        {
-            segmentVector.push_back(currentSegment);
-            rclcpp::sleep_for(std::chrono::milliseconds(10));
-            if (!isThisAWall(currentSegment) && !isThisACorner(currentSegment))
-                detectCylinder(currentSegment);
-            else if (!isThisAWall(currentSegment) && isThis90(currentSegment))
-                detectSquare(currentSegment);
-            segStarted = false;
-        }
-        */
+
         if (segStarted && !currentSegment.empty())
         {
             segmentVector.push_back(currentSegment);
             rclcpp::sleep_for(std::chrono::milliseconds(10));
             if (!isThisAWall(currentSegment)) {
-                if (isThis90(currentSegment)) {
-                    detectSquare(currentSegment);
-                } else if (!isThisACorner(currentSegment)) {
+                if (!isThisACorner(currentSegment)) {
                     detectCylinder(currentSegment);
+                } else if (isThis90(currentSegment)) {
+                    std::cout << "90-degree corner detected" << std::endl;
+                    detectSquare(currentSegment);
                 }
             }
             segStarted = false;
@@ -110,40 +89,6 @@ std::vector<std::vector<geometry_msgs::msg::Point>> ObjDetect::countSegments(con
     return segmentVector;
 }
 
-/*
-void ObjDetect::detectCylinder(const std::vector<geometry_msgs::msg::Point> &segment)
-{
-    if (segment.size() >= 6)
-    {
-        const auto &p1 = segment.front();
-        const auto &p2 = segment.at(segment.size() / 2);
-        const auto &p3 = segment.back();
-
-        double a = hypot(p2.x - p1.x, p2.y - p1.y);
-        double b = hypot(p3.x - p2.x, p3.y - p2.y);
-        double c = hypot(p3.x - p1.x, p3.y - p1.y);
-
-        double cosTheta = (a * a + b * b - c * c) / (2 * a * b);
-        double theta = acos(cosTheta);
-        double R = c / (2 * fabs(sin(theta / 2)));
-
-        double targetRadius = 0.15;
-        double tolerance_ = 0.01;
-
-        if (fabs(R - targetRadius) < tolerance_)
-        {
-            geometry_msgs::msg::Point centre = findCentre(p1, p3, targetRadius);
-            if (!checkExisting(centre) || firstCent)
-            {
-                firstCent = false;
-                centres.push_back(centre);
-                RCLCPP_INFO(this->get_logger(), "Circle with radius ~%.2fm detected. Center: x = %.2f, y = %.2f, z = %.2f", targetRadius, centre.x, centre.y, centre.z);
-                marker_pub_->publish(produceMarkerCylinder(centre, visualization_msgs::msg::Marker::CYLINDER, "black"));
-            }
-        }
-    }
-}
-*/
 void ObjDetect::detectCylinder(const std::vector<geometry_msgs::msg::Point> &segment)
 {
     if (segment.size() >= 6 && !isThisACorner(segment))
@@ -194,7 +139,9 @@ void ObjDetect::detectCylinder(const std::vector<geometry_msgs::msg::Point> &seg
         }
     }
 }
-/*
+
+
+
 void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segment)
 {
     if (segment.size() < 6)
@@ -235,89 +182,6 @@ void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segme
             marker_pub_->publish(marker);
         }
     }
-}
-*/
-//Line fitting method for detecting squares; includes fit line and anglebetweensegments
-void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segment)
-{
-    if (segment.size() < 6)
-        return;
-
-    size_t half = segment.size() / 2;
-    std::vector<geometry_msgs::msg::Point> seg1(segment.begin(), segment.begin() + half);
-    std::vector<geometry_msgs::msg::Point> seg2(segment.begin() + half, segment.end());
-
-    float length1 = hypot(seg1.front().x - seg1.back().x, seg1.front().y - seg1.back().y);
-    float length2 = hypot(seg2.front().x - seg2.back().x, seg2.front().y - seg2.back().y);
-
-    float targetLength = 0.3;
-    float tolerance = 0.05;
-
-    if (fabs(length1 - targetLength) < tolerance && fabs(length2 - targetLength) < tolerance)
-    {
-        float angle = angleBetweenSegments(seg1, seg2);
-        if (angle > 85 && angle < 95)
-        {
-            geometry_msgs::msg::Point corner = segment[half]; // approx corner
-            if (std::isnan(corner.x) || std::isnan(corner.y))
-                return;
-
-            if (!checkExisting(corner) || firstCent)
-            {
-                firstCent = false;
-                centres.push_back(corner);
-                RCLCPP_INFO(this->get_logger(), "Fitted square corner at x=%.2f, y=%.2f", corner.x, corner.y);
-                auto marker = produceMarkerCylinder(corner, visualization_msgs::msg::Marker::CUBE, "red");
-                marker_pub_->publish(marker);
-            }
-        }
-    }
-}
-
-std::pair<float, float> ObjDetect::fitLine(const std::vector<geometry_msgs::msg::Point>& segment)
-{
-    float sumX = 0.0, sumY = 0.0, sumXY = 0.0, sumX2 = 0.0;
-    size_t n = segment.size();
-
-    for (const auto& pt : segment)
-    {
-        sumX += pt.x;
-        sumY += pt.y;
-        sumXY += pt.x * pt.y;
-        sumX2 += pt.x * pt.x;
-    }
-
-    float denom = (n * sumX2 - sumX * sumX);
-    if (denom == 0.0) return {0.0f, 0.0f}; // fallback
-
-    float slope = (n * sumXY - sumX * sumY) / denom;
-    float intercept = (sumY - slope * sumX) / n;
-
-    return {slope, intercept};
-}
-
-float ObjDetect::angleBetweenSegments(const std::vector<geometry_msgs::msg::Point>& seg1, const std::vector<geometry_msgs::msg::Point>& seg2)
-{
-    if (seg1.size() < 2 || seg2.size() < 2) return 0.0;
-
-    auto p1 = seg1.front();
-    auto p2 = seg1.back();
-    auto p3 = seg2.front();
-    auto p4 = seg2.back();
-
-    float v1x = p2.x - p1.x;
-    float v1y = p2.y - p1.y;
-    float v2x = p4.x - p3.x;
-    float v2y = p4.y - p3.y;
-
-    float dot = v1x * v2x + v1y * v2y;
-    float mag1 = hypot(v1x, v1y);
-    float mag2 = hypot(v2x, v2y);
-
-    float cosTheta = dot / (mag1 * mag2);
-    cosTheta = std::clamp(cosTheta, -1.0f, 1.0f); // prevent NaN
-    float theta = acos(cosTheta) * 180 / M_PI;
-    return theta;
 }
 
 
@@ -407,6 +271,10 @@ visualization_msgs::msg::Marker ObjDetect::produceMarkerCylinder(geometry_msgs::
         marker.color.r = 1.0;
         marker.color.g = 0.0;
         marker.color.b = 0.0;
+    } else if (colour == "green") {
+        marker.color.r = 0.0;
+        marker.color.g = 1.0;
+        marker.color.b = 0.0;
     } else {
         // Default to black if unrecognized
         marker.color.r = 0.0;
@@ -441,20 +309,7 @@ bool ObjDetect::isThisACorner(const std::vector<geometry_msgs::msg::Point> &segm
 
     return theta < 120;
 }
-/*
-bool ObjDetect::isThis90(const std::vector<geometry_msgs::msg::Point> &segment)
-{
-    float a = hypot(segment.back().x - segment[segment.size() / 2].x, segment.back().y - segment[segment.size() / 2].y);
-    float b = hypot(segment.front().x - segment[segment.size() / 2].x, segment.front().y - segment[segment.size() / 2].y);
-    float c = hypot(segment.back().x - segment.front().x, segment.back().y - segment.front().y);
-    float cosTheta = (a * a + b * b - c * c) / (2 * a * b);
-    float theta = acos(cosTheta) * 180 / M_PI;
 
-    return 85 < theta < 95;
-}
-*/
-/* 
-//V2 fixing errors
 bool ObjDetect::isThis90(const std::vector<geometry_msgs::msg::Point> &segment)
 {
     float a = hypot(segment.back().x - segment[segment.size() / 2].x, segment.back().y - segment[segment.size() / 2].y);
@@ -465,118 +320,6 @@ bool ObjDetect::isThis90(const std::vector<geometry_msgs::msg::Point> &segment)
 
     return (theta > 85.0 && theta < 95.0);
 }
-*/
-/*
-// using fitline and anglebetweenline to accurately test?
-bool ObjDetect::isThis90(const std::vector<geometry_msgs::msg::Point>& segment)
-{
-    if (segment.size() < 6) return false; // Need enough points for fitting
-
-    size_t mid = segment.size() / 2;
-    std::vector<geometry_msgs::msg::Point> firstHalf(segment.begin(), segment.begin() + mid);
-    std::vector<geometry_msgs::msg::Point> secondHalf(segment.begin() + mid, segment.end());
-
-    cv::Vec4f line1 = fitLineToPoints(firstHalf);
-    cv::Vec4f line2 = fitLineToPoints(secondHalf);
-
-    float angle = angleBetweenLines(line1, line2);
-    return (angle > 80.0 && angle < 100.0);
-}
-*/
-/*
-//using segment line fitting going through all points
-// Function to check if a segment contains a 90-degree angle
-bool ObjDetect::isThis90(const std::vector<geometry_msgs::msg::Point>& segment)
-{
-    if (segment.size() < 3)
-    {
-        return false; // Not enough points to check for 90-degree angle
-    }
-
-    // Function to calculate the angle between two lines using their slopes
-    auto calculateAngleBetweenLines = [](const geometry_msgs::msg::Point& p1, const geometry_msgs::msg::Point& p2, const geometry_msgs::msg::Point& p3) -> float 
-    {
-        float dx1 = p2.x - p1.x;
-        float dy1 = p2.y - p1.y;
-        float dx2 = p3.x - p2.x;
-        float dy2 = p3.y - p2.y;
-        
-        float dot = dx1 * dx2 + dy1 * dy2;
-        float mag1 = std::sqrt(dx1 * dx1 + dy1 * dy1);
-        float mag2 = std::sqrt(dx2 * dx2 + dy2 * dy2);
-        
-        float angle = std::acos(dot / (mag1 * mag2)) * 180.0 / M_PI;
-        return angle;
-    };
-
-    // Check for 90-degree angle between consecutive line segments
-    for (size_t i = 1; i < segment.size() - 1; ++i)
-    {
-        float angle = calculateAngleBetweenLines(segment[i-1], segment[i], segment[i+1]);
-
-        if (fabs(angle - 90.0f) <= 10.0f) // Check if the angle is close to 90 degrees (within a tolerance)
-        {
-            std::cout << "90-degree corner detected at index " << i << " (angle = " << angle << "°)" << std::endl;
-            return true; // 90-degree corner detected
-        }
-    }
-    return false; // No 90-degree angle detected
-}
-*/
-bool ObjDetect::isThis90(const std::vector<geometry_msgs::msg::Point>& segment)
-{
-    const size_t windowSize = 10;
-    const float angleToleranceDeg = 10.0;
-
-    if (segment.size() < 2 * windowSize)
-        return false; // Not enough points to form two lines
-
-    // Helper lambda to fit a line direction vector from a range of points
-    auto fitLine = [](const std::vector<geometry_msgs::msg::Point>& points, size_t start, size_t count) {
-        float sum_x = 0, sum_y = 0;
-        for (size_t i = start; i < start + count; ++i) {
-            sum_x += points[i].x;
-            sum_y += points[i].y;
-        }
-        float mean_x = sum_x / count;
-        float mean_y = sum_y / count;
-
-        float num = 0, den = 0;
-        for (size_t i = start; i < start + count; ++i) {
-            num += (points[i].x - mean_x) * (points[i].y - mean_y);
-            den += (points[i].x - mean_x) * (points[i].x - mean_x);
-        }
-
-        float slope = den != 0 ? num / den : 0.0;  // Avoid division by zero
-        float dx = 1.0;
-        float dy = slope;
-        float mag = std::sqrt(dx * dx + dy * dy);
-        return std::make_pair(dx / mag, dy / mag); // return unit vector
-    };
-
-    // Helper lambda to compute angle between two direction vectors
-    auto angleBetween = [](std::pair<float, float> v1, std::pair<float, float> v2) {
-        float dot = v1.first * v2.first + v1.second * v2.second;
-        dot = std::clamp(dot, -1.0f, 1.0f); // Clamp for numerical safety
-        return std::acos(dot) * 180.0 / M_PI;
-    };
-
-    // Slide a window through the segment and compare line directions
-    for (size_t i = 0; i <= segment.size() - 2 * windowSize; ++i) {
-        auto dir1 = fitLine(segment, i, windowSize);
-        auto dir2 = fitLine(segment, i + windowSize, windowSize);
-        float angle = angleBetween(dir1, dir2);
-
-        if (std::fabs(angle - 90.0f) <= angleToleranceDeg) {
-            std::cout << "90-degree corner detected at index " << i + windowSize
-                      << " (angle = " << angle << "°)" << std::endl;
-            return true;
-        }
-    }
-
-    return false;
-}
-
 
 
 int main(int argc, char **argv)

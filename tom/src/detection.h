@@ -39,9 +39,18 @@ private:
     bool isThis90(const std::vector<geometry_msgs::msg::Point> &segment);
     double duplicate_threshold_;
 
-    std::pair<float, float> fitLine(const std::vector<geometry_msgs::msg::Point>& segment);
-    float angleBetweenSegments(const std::vector<geometry_msgs::msg::Point>& seg1, const std::vector<geometry_msgs::msg::Point>& seg2);
+//   std::pair<float, float> fitLine1(const std::vector<geometry_msgs::msg::Point>& segment);
+//   float angleBetweenSegments(const std::vector<geometry_msgs::msg::Point>& seg1, const std::vector<geometry_msgs::msg::Point>& seg2);
+// Returns a unit direction vector as a pair (dx, dy)
+std::pair<float, float> fitLine(
+    const std::vector<geometry_msgs::msg::Point>& points, 
+    size_t start, 
+    size_t count);
 
+// Returns angle between two 2D unit vectors in degrees
+float angleBetween(
+    std::pair<float, float> v1, 
+    std::pair<float, float> v2);
 };
 
 #endif // DETECTION_H
