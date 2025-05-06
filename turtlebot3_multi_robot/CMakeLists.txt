@@ -46,6 +46,17 @@ ament_target_dependencies(Utest_goal_reassignment
 )
 install(TARGETS Utest_goal_reassignment DESTINATION lib/${PROJECT_NAME})
 
+add_executable(Utest_optimized_goal_assignment src/Utest_optimized_goal_assignment.cpp src/TurtleBot.cpp src/GoalManager.cpp)
+ament_target_dependencies(Utest_optimized_goal_assignment
+  rclcpp
+  std_msgs
+  geometry_msgs
+  nav_msgs
+  nav2_msgs
+  rclcpp_action
+)
+install(TARGETS Utest_optimized_goal_assignment DESTINATION lib/${PROJECT_NAME})
+
 
 install(DIRECTORY launch models rviz urdf worlds params
   DESTINATION share/${PROJECT_NAME}/

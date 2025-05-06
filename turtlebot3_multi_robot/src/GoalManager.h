@@ -10,7 +10,7 @@
 #include <memory>
 #include <string>
 
-#include "TurtleBot.h"  // <-- USE YOUR TurtleBot CLASS!
+#include "TurtleBot.h"
 
 class GoalManager : public rclcpp::Node {
 public:
@@ -23,14 +23,14 @@ public:
 
     void register_bot(const std::string& name, std::shared_ptr<TurtleBot> bot);
 
-    void queue_goal(const std::string& name, const geometry_msgs::msg::PoseStamped& goal_pose);
+    void queue_global_goal(const geometry_msgs::msg::PoseStamped& goal_pose);
+    bool has_global_goals() const;
 
     void update();
 
-    bool has_pending_goals(const std::string& name) const;
+    bool has_pending_goals(const std::string& name) const; // Deprecated, returns global state
 
 private:
     std::unordered_map<std::string, std::shared_ptr<TurtleBot>> bots_;
-    std::unordered_map<std::string, std::queue<geometry_msgs::msg::PoseStamped>> pending_goals_;
+    std::queue<geometry_msgs::msg::PoseStamped> global_goal_queue_;
 };
-

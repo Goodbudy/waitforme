@@ -18,19 +18,14 @@ geometry_msgs::msg::PoseStamped create_goal(double x, double y, double yaw = 0.0
 }
 
 void run_phase(
-    const geometry_msgs::msg::PoseStamped& start_pose,
     const geometry_msgs::msg::PoseStamped& goal_pose,
     const std::shared_ptr<GoalManager>& manager,
     const std::shared_ptr<TurtleBot>& bot)
 {
-    //bot->setHomePosition(start_pose.pose.position.x, start_pose.pose.position.y);
-    //bot->setAtHome(true);  // Reset to home status
-
-    // manager->register_bot(bot->getName(), bot);
-    manager->queue_goal(bot->getName(), goal_pose);
+    manager->queue_global_goal(goal_pose);
 
     rclcpp::Rate rate(10.0); // 10Hz update rate
-    while (rclcpp::ok() && !(bot->isHome() && !manager->has_pending_goals(bot->getName()))) {
+    while (rclcpp::ok() && !(bot->isHome() && !manager->has_global_goals())) {
         bot->publishStatus();  // Optional: Keep publishing status during motion
         manager->update();
         rate.sleep();
@@ -60,18 +55,15 @@ int main(int argc, char** argv) {
         create_goal(1.0, 0.8, 0.0)
     };
 
-    geometry_msgs::msg::PoseStamped current_pose = home;
-
     bot->setHomePosition(home.pose.position.x, home.pose.position.y);
+    bot->setAtHome(true);
 
     for (size_t i = 0; i < task_goals.size(); ++i) {
         RCLCPP_INFO(rclcpp::get_logger("main"), "--- PHASE %zu: Going to task ---", 2 * i + 1);
-        run_phase(current_pose, task_goals[i], manager, bot);
+        run_phase(task_goals[i], manager, bot);
 
         RCLCPP_INFO(rclcpp::get_logger("main"), "--- PHASE %zu: Returning home ---", 2 * i + 2);
-        run_phase(task_goals[i], home, manager, bot);
-
-        current_pose = home;
+        run_phase(home, manager, bot);
     }
 
     RCLCPP_INFO(rclcpp::get_logger("main"), "Finished all goal phases.");
@@ -80,4 +72,3 @@ int main(int argc, char** argv) {
     executor_thread.join();
     return 0;
 }
-

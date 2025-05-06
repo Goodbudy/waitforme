@@ -35,7 +35,7 @@ def generate_launch_description():
     # Names and poses of the robots
     robots = [
         {'name': 'tb1', 'x_pose': '3.0', 'y_pose': '3.0', 'z_pose': 0.01},
-        {'name': 'tb2', 'x_pose': '3.0', 'y_pose': '1.8', 'z_pose': 0.01},
+        {'name': 'tb2', 'x_pose': '3.0', 'y_pose': '1.5', 'z_pose': 0.01},
         # ...
         # ...
         ]
