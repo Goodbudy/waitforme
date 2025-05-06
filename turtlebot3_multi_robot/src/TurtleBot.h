@@ -42,9 +42,14 @@ private:
     bool delivering_drink_;
     bool in_proximity_;
 
+    bool goal_active_;
+    double goal_tolerance_;
+
     double x_home_;
     double y_home_;
     double x_goal_;
     double y_goal_;
-};
 
+    bool returning_home_;
+    rclcpp_action::Client<NavigateToPose>::SendGoalOptions send_goal_options_;
+};

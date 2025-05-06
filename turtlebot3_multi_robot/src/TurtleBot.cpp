@@ -5,8 +5,13 @@
 using namespace std::chrono_literals;
 
 TurtleBot::TurtleBot(std::string name, std::shared_ptr<rclcpp::Node> node)
-    : bot_name(name), node_(node), is_home_(true), delivering_drink_(false), in_proximity_(false),
-      x_home_(0.0), y_home_(0.0), x_goal_(0.0), y_goal_(0.0)
+    : bot_name(name), node_(node), 
+    at_home_pub_(nullptr), delivering_pub_(nullptr), proximity_pub_(nullptr),
+    is_home_(true), delivering_drink_(false), in_proximity_(false),
+    goal_active_(false), goal_tolerance_(0.2),
+    x_home_(0.0), y_home_(0.0), x_goal_(0.0), y_goal_(0.0),
+    returning_home_(false)
+
 {
     at_home_pub_ = node_->create_publisher<std_msgs::msg::Bool>(bot_name + "/at_home", 10);
     delivering_pub_ = node_->create_publisher<std_msgs::msg::Bool>(bot_name + "/delivering", 10);
@@ -14,11 +19,31 @@ TurtleBot::TurtleBot(std::string name, std::shared_ptr<rclcpp::Node> node)
 
     client_ = rclcpp_action::create_client<NavigateToPose>(
         node_, "/" + bot_name + "/navigate_to_pose");
-    
 
-    // while (!client_->wait_for_action_server(1s)) {
-    //     RCLCPP_INFO(node_->get_logger(), "[%s] Waiting for action server...", bot_name.c_str());
-    // }
+    send_goal_options_.result_callback = [this](const GoalHandleNav::WrappedResult & result) {
+        RCLCPP_INFO(node_->get_logger(), "[%s] Navigation result received", bot_name.c_str());
+        switch (result.code) {
+            case rclcpp_action::ResultCode::SUCCEEDED:
+                if (!returning_home_) {
+                    RCLCPP_INFO(node_->get_logger(), "[%s] Delivery complete. Returning home...", bot_name.c_str());
+                    returning_home_ = true;
+                    navigateTo(x_home_, y_home_);
+                } else {
+                    RCLCPP_INFO(node_->get_logger(), "[%s] Arrived home. Ready for next goal.", bot_name.c_str());
+                    setAtHome(true);
+                }
+                break;
+            case rclcpp_action::ResultCode::ABORTED:
+                RCLCPP_ERROR(node_->get_logger(), "[%s] Navigation aborted", bot_name.c_str());
+                break;
+            case rclcpp_action::ResultCode::CANCELED:
+                RCLCPP_WARN(node_->get_logger(), "[%s] Navigation cancelled", bot_name.c_str());
+                break;
+            default:
+                RCLCPP_WARN(node_->get_logger(), "[%s] Unknown result code", bot_name.c_str());
+                break;
+        }
+    };
 
     RCLCPP_INFO(node_->get_logger(), "[%s] TurtleBot initialized", bot_name.c_str());
 }
@@ -61,6 +86,9 @@ std::string TurtleBot::getName() const {
 }
 
 void TurtleBot::navigateTo(double x, double y) {
+    returning_home_ = (x == x_home_ && y == y_home_);
+    is_home_ = false;
+
     auto goal_msg = NavigateToPose::Goal();
     goal_msg.pose.header.frame_id = "map";
     goal_msg.pose.header.stamp = node_->now();
@@ -70,25 +98,7 @@ void TurtleBot::navigateTo(double x, double y) {
 
     RCLCPP_INFO(node_->get_logger(), "[%s] Sending goal to (%.2f, %.2f)...", bot_name.c_str(), x, y);
 
-    auto send_goal_options = rclcpp_action::Client<NavigateToPose>::SendGoalOptions();
-    send_goal_options.result_callback = [this](const GoalHandleNav::WrappedResult & result) {
-        switch (result.code) {
-            case rclcpp_action::ResultCode::SUCCEEDED:
-                RCLCPP_INFO(node_->get_logger(), "[%s] Navigation succeeded!", bot_name.c_str());
-                break;
-            case rclcpp_action::ResultCode::ABORTED:
-                RCLCPP_ERROR(node_->get_logger(), "[%s] Navigation aborted", bot_name.c_str());
-                break;
-            case rclcpp_action::ResultCode::CANCELED:
-                RCLCPP_WARN(node_->get_logger(), "[%s] Navigation cancelled", bot_name.c_str());
-                break;
-            default:
-                RCLCPP_WARN(node_->get_logger(), "[%s] Unknown result code", bot_name.c_str());
-                break;
-        }
-    };
-
-    client_->async_send_goal(goal_msg, send_goal_options);
+    client_->async_send_goal(goal_msg, send_goal_options_);
 }
 
 void TurtleBot::setHomePosition(double x, double y) {
@@ -100,5 +110,3 @@ void TurtleBot::setGoalPosition(double x, double y) {
     x_goal_ = x;
     y_goal_ = y;
 }
-
-
