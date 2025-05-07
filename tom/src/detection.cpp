@@ -77,7 +77,7 @@ std::vector<std::vector<geometry_msgs::msg::Point>> ObjDetect::countSegments(con
                 if (!isThisACorner(currentSegment)) {
                     detectCylinder(currentSegment);
                 } else if (isThis90(currentSegment)) {
-                    std::cout << "90-degree corner detected" << std::endl;
+                    //std::cout << "90-degree corner detected" << std::endl;
                     detectSquare(currentSegment);
                 }
             }
@@ -144,9 +144,6 @@ void ObjDetect::detectCylinder(const std::vector<geometry_msgs::msg::Point> &seg
 
 void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segment)
 {
-    if (segment.size() < 6)
-        return;
-
     // Get points from the segment
     const auto &p1 = segment.front();
     const auto &p2 = segment.at(segment.size() / 2);
@@ -220,7 +217,7 @@ geometry_msgs::msg::Point ObjDetect::findCentre(geometry_msgs::msg::Point P1, ge
 
 bool ObjDetect::checkExisting(geometry_msgs::msg::Point centre)
 {
-    duplicate_threshold_ = 0.5;
+    duplicate_threshold_ = 0.3;
     for (const auto &existing_centre : centres)
     {
         if (hypot(centre.x - existing_centre.x, centre.y - existing_centre.y) < duplicate_threshold_)
@@ -312,6 +309,11 @@ bool ObjDetect::isThisACorner(const std::vector<geometry_msgs::msg::Point> &segm
 
 bool ObjDetect::isThis90(const std::vector<geometry_msgs::msg::Point> &segment)
 {
+    if (segment.size() < 12){
+        //std::cout << "Fail" << std::endl;
+        return false;
+    }
+
     float a = hypot(segment.back().x - segment[segment.size() / 2].x, segment.back().y - segment[segment.size() / 2].y);
     float b = hypot(segment.front().x - segment[segment.size() / 2].x, segment.front().y - segment[segment.size() / 2].y);
     float c = hypot(segment.back().x - segment.front().x, segment.back().y - segment.front().y);
