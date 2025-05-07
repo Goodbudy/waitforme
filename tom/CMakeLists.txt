@@ -8,6 +8,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(cv_bridge REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
@@ -25,6 +26,9 @@ ament_target_dependencies(localisation_node rclcpp geometry_msgs nav2_msgs std_m
 add_executable(detection_node src/detection.cpp)
 ament_target_dependencies(detection_node rclcpp geometry_msgs nav2_msgs std_msgs OpenCV sensor_msgs nav_msgs tf2 tf2_geometry_msgs visualization_msgs)
 
+add_executable(people_detector src/people_detector.cpp)
+ament_target_dependencies(people_detector rclcpp sensor_msgs visualization_msgs cv_bridge OpenCV)
+
 # Link OpenCV for the detection node
 target_link_libraries(detection_node ${OpenCV_LIBS})
 
@@ -36,6 +40,11 @@ install(TARGETS localisation_node
 install(TARGETS detection_node
   DESTINATION lib/${PROJECT_NAME})
 
+# install the people detector executable
+install(TARGETS
+people_detector
+DESTINATION lib/${PROJECT_NAME}
+)
 # Install launch files (if you have any)
 install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME})
