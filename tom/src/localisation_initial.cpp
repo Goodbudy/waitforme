@@ -1,15 +1,17 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include <chrono>
-#include <thread>  // For sleep_for()
+#include <thread>
 
 class AutoLocalise : public rclcpp::Node {
 public:
     AutoLocalise() : Node("localisation_node_initial") {
+        this->declare_parameter("use_sim_time", true);  // make sure sim time is active
         publisher_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 10);
-        std::this_thread::sleep_for(std::chrono::seconds(1)); // Ensure publisher is fully initialized
-        set_initial_pose();
-        RCLCPP_INFO(this->get_logger(), "Localisation Node Started");
+        timer_ = this->create_wall_timer(
+            std::chrono::seconds(2),
+            std::bind(&AutoLocalise::set_initial_pose, this)
+        );
     }
 
 private:
@@ -20,23 +22,26 @@ private:
         msg.pose.pose.position.x = 3.12;
         msg.pose.pose.position.y = 3.31;
         msg.pose.pose.orientation.w = 1.0;
-        publisher_->publish(msg);
-        RCLCPP_INFO(this->get_logger(), "Published initial pose");
 
-        // Give time for message to be sent before node shuts down
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        // Minimal 6x6 covariance matrix for x, y, and yaw
+        for (int i = 0; i < 36; ++i) msg.pose.covariance[i] = 0.0;
+        msg.pose.covariance[0] = 0.25;         // x
+        msg.pose.covariance[7] = 0.25;         // y
+        msg.pose.covariance[35] = 0.0685;      // yaw
+
+        publisher_->publish(msg);
+        RCLCPP_INFO(this->get_logger(), "✅ Published initial pose");
+
+        // Shutdown after publishing
+        rclcpp::shutdown();
     }
 
     rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr publisher_;
+    rclcpp::TimerBase::SharedPtr timer_;
 };
 
 int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
-    auto node = std::make_shared<AutoLocalise>();
-
-    rclcpp::spin_some(node);  // Allow processing of published message
-    std::this_thread::sleep_for(std::chrono::seconds(2)); // Ensure publish is completed
-
-    rclcpp::shutdown();
+    rclcpp::spin(std::make_shared<AutoLocalise>());  // spin properly
     return 0;
 }
