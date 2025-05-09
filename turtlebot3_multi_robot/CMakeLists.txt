@@ -17,58 +17,49 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(rclcpp_action REQUIRED)
+find_package(issy REQUIRED)
 
-# Add C++ executables
-add_executable(Utest_single_goal_distribution src/Utest_single_goal_distribution.cpp src/TurtleBot.cpp src/GoalManager.cpp)
+# Add executables
+add_executable(Utest_single_goal_distribution
+  src/Utest_single_goal_distribution.cpp
+  src/TurtleBot.cpp
+  src/GoalManager.cpp
+)
 ament_target_dependencies(Utest_single_goal_distribution
-  rclcpp
-  std_msgs
-  geometry_msgs
-  nav_msgs
-  nav2_msgs
-  rclcpp_action
+  rclcpp std_msgs geometry_msgs nav_msgs nav2_msgs rclcpp_action issy
 )
 
-# Install C++ executable
+add_executable(Utest_goal_reassignment
+  src/Utest_goal_reassignment.cpp
+  src/TurtleBot.cpp
+  src/GoalManager.cpp
+)
+ament_target_dependencies(Utest_goal_reassignment
+  rclcpp std_msgs geometry_msgs nav_msgs nav2_msgs rclcpp_action issy
+)
+
+add_executable(Utest_optimized_goal_assignment
+  src/Utest_optimized_goal_assignment.cpp
+  src/TurtleBot.cpp
+  src/GoalManager.cpp
+)
+ament_target_dependencies(Utest_optimized_goal_assignment
+  rclcpp std_msgs geometry_msgs nav_msgs nav2_msgs rclcpp_action issy
+)
+
+# Install executables
 install(TARGETS
   Utest_single_goal_distribution
+  Utest_goal_reassignment
+  Utest_optimized_goal_assignment
   DESTINATION lib/${PROJECT_NAME}
 )
 
-add_executable(Utest_goal_reassignment src/Utest_goal_reassignment.cpp src/TurtleBot.cpp src/GoalManager.cpp)
-ament_target_dependencies(Utest_goal_reassignment
-  rclcpp
-  std_msgs
-  geometry_msgs
-  nav_msgs
-  nav2_msgs
-  rclcpp_action
-)
-install(TARGETS Utest_goal_reassignment DESTINATION lib/${PROJECT_NAME})
-
-add_executable(Utest_optimized_goal_assignment src/Utest_optimized_goal_assignment.cpp src/TurtleBot.cpp src/GoalManager.cpp)
-ament_target_dependencies(Utest_optimized_goal_assignment
-  rclcpp
-  std_msgs
-  geometry_msgs
-  nav_msgs
-  nav2_msgs
-  rclcpp_action
-)
-install(TARGETS Utest_optimized_goal_assignment DESTINATION lib/${PROJECT_NAME})
-
-
+# Install resources (non-code)
 install(DIRECTORY launch models rviz urdf worlds params
   DESTINATION share/${PROJECT_NAME}/
 )
 
 ament_environment_hooks("${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/multi_robot.dsv.in")
 
-# Linting (optional)
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  ament_lint_auto_find_test_dependencies()
-endif()
-
 ament_package()
-

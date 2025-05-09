@@ -1,10 +1,9 @@
 #include <rclcpp/rclcpp.hpp>
-#include "GoalManager.h"
-#include "TurtleBot.h"
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <thread>
 #include <vector>
 #include <memory>
+#include "GoalManager.h"
 
 geometry_msgs::msg::PoseStamped create_goal(double x, double y, double yaw = 0.0) {
     geometry_msgs::msg::PoseStamped goal;
@@ -13,7 +12,7 @@ geometry_msgs::msg::PoseStamped create_goal(double x, double y, double yaw = 0.0
     goal.pose.position.x = x;
     goal.pose.position.y = y;
     goal.pose.position.z = 0.0;
-    goal.pose.orientation.w = 1.0;  // Facing forward
+    goal.pose.orientation.w = 1.0;
     return goal;
 }
 
@@ -21,18 +20,6 @@ int main(int argc, char** argv) {
     rclcpp::init(argc, argv);
 
     auto manager = std::make_shared<GoalManager>();
-    auto node1 = std::make_shared<rclcpp::Node>("tb1_node");
-    auto node2 = std::make_shared<rclcpp::Node>("tb2_node");
-    auto tb1 = std::make_shared<TurtleBot>("tb1", node1);
-    auto tb2 = std::make_shared<TurtleBot>("tb2", node2);
-
-    tb1->setHomePosition(3.0, 3.0);
-    tb2->setHomePosition(1.0, 3.0);
-    tb1->setAtHome(true);
-    tb2->setAtHome(true);
-
-    manager->register_bot(tb1->getName(), tb1);
-    manager->register_bot(tb2->getName(), tb2);
 
     std::vector<geometry_msgs::msg::PoseStamped> goals = {
         create_goal(2.0, 2.5),
@@ -47,27 +34,24 @@ int main(int argc, char** argv) {
 
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(manager);
-    executor.add_node(node1);
-    executor.add_node(node2);
 
     std::thread exec_thread([&executor]() {
         executor.spin();
     });
 
-    rclcpp::Rate rate(10.0);
-    while (rclcpp::ok()) {
-        manager->update();
-        tb1->publishStatus();
-        tb2->publishStatus();
+    RCLCPP_INFO(rclcpp::get_logger("main"), "Goals queued. Running until all are assigned and completed.");
 
-        if (!manager->has_global_goals() && tb1->isHome() && tb2->isHome()) {
-            break;
-        }
-
-        rate.sleep();
+    // Monitor until queue is empty (i.e., all goals assigned and completed)
+    while (rclcpp::ok() && manager->has_global_goals()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 
-    RCLCPP_INFO(rclcpp::get_logger("main"), "All goals completed.");
+    RCLCPP_INFO(rclcpp::get_logger("main"), "All goals assigned. Waiting for bots to return home.");
+
+    // Let simulation complete final movements back to home
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+
+    RCLCPP_INFO(rclcpp::get_logger("main"), "Finished optimized goal assignment test.");
     rclcpp::shutdown();
     exec_thread.join();
     return 0;

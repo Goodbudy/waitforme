@@ -1,47 +1,50 @@
 #include <rclcpp/rclcpp.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
 #include "GoalManager.h"
 
-geometry_msgs::msg::PoseStamped create_goal(double x, double y, double yaw = 0.0) {
+geometry_msgs::msg::PoseStamped createGoal(double x, double y) {
     geometry_msgs::msg::PoseStamped goal;
     goal.header.frame_id = "map";
     goal.header.stamp = rclcpp::Clock().now();
-
     goal.pose.position.x = x;
     goal.pose.position.y = y;
-    goal.pose.position.z = 0.0;
-
-    goal.pose.orientation.w = 1.0; // basic forward-facing
-
+    goal.pose.orientation.w = 1.0;
     return goal;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
-    // auto node = rclcpp::Node::make_shared("goal_test_node");
-    auto manager = std::make_shared<GoalManager>();
-    
+
+    auto goal_manager = std::make_shared<GoalManager>();
+
+    auto goal1 = createGoal(1.0, 2.0);
+    auto goal2 = createGoal(3.0, 4.0);
+
+    goal_manager->queue_global_goal(goal1);
+    goal_manager->queue_global_goal(goal2);
+
+    if (!goal_manager->has_global_goals()) {
+        RCLCPP_ERROR(goal_manager->get_logger(), "Expected global goals in queue but found none.");
+        return 1;
+    }
+
+    // Use MultiThreadedExecutor to simulate threading
     rclcpp::executors::MultiThreadedExecutor executor;
-    executor.add_node(manager);
-    
-    std::thread executor_thread([&executor](){
-        executor.spin();
-    });
+    executor.add_node(goal_manager);
 
-    auto goal1 = create_goal(2.0, 2.5);  // for tb1
-    auto goal2 = create_goal(1.0, 0.8);   // for tb2
+    auto start = std::chrono::steady_clock::now();
+    while (rclcpp::ok() && std::chrono::steady_clock::now() - start < std::chrono::seconds(2)) {
+        executor.spin_some();
+    }
 
-    rclcpp::sleep_for(std::chrono::seconds(5));
+    if (!goal_manager->has_global_goals()) {
+        RCLCPP_ERROR(goal_manager->get_logger(), "Global goals unexpectedly disappeared from queue.");
+        return 1;
+    }
 
-    manager->send_goal("tb1", goal1);
-    
-    rclcpp::sleep_for(std::chrono::seconds(5));
-    
-    manager->send_goal("tb2", goal2);
-    
-    // rclcpp::sleep_for(std::chrono::seconds(20));
-    // rclcpp::spin(node);
-    //rclcpp::shutdown();
-    executor_thread.join(); 
+    executor.remove_node(goal_manager);
+    RCLCPP_INFO(goal_manager->get_logger(), "GoalManager test passed as executable.");
+
+    rclcpp::shutdown();
     return 0;
 }
-
