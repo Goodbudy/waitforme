@@ -27,10 +27,16 @@ Termianl 1:
 colcon build --packages-select andy
 ros2 run andy astar_planner
 
+
 Terminal 2:     
 export TURTLEBOT3_MODEL=waffle_pi
-ros2 launch turtlebot3_navigation2 navigation2.launch.py map:=$HOME/ros2_ws/src/waitforme/GalleryMap.yaml
+ros2 launch turtlebot3_navigation2 navigation2.launch.py map:=$HOME/ros2_ws/src/waitforme/GalleryMapHD.yaml
 - Localise the turtlebot in RViz using the 2DPoseEstimate thing, then minimise window
+
+Terminal 3:
+export TURTLEBOT3_MODEL=waffle_pi
+ros2 launch turtlebot3_gazebo Gallery_Test2.launch.py
+
 
 this will then export an image to the ros2 workspace which you can open and view. 
 
@@ -43,5 +49,22 @@ Useful information about A* program: https://chatgpt.com/share/67ecab6e-ce20-800
 
 
 service call
+send a goal:
 ros2 topic pub /astar_goal geometry_msgs/msg/PoseStamped "{header: {frame_id: 'map'}, pose: {position: {x: 2.0, y: 0.5, z: 0.0}, orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0}}}" --once
+
+send a object:
+ros2 topic pub /visualization_marker visualization_msgs/msg/Marker "{
+  header: {frame_id: 'map'},
+  ns: 'objects',
+  id: 0,
+  type: 3,
+  action: 0,
+  pose: {
+    position: {x: 0.7, y: 2.7, z: 0.0},
+    orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0}
+  },
+  scale: {x: 0.4, y: 0.4, z: 0.4},
+  color: {r: 0.0, g: 0.0, b: 1.0, a: 1.0}
+}" --once
+
 

@@ -1,36 +1,26 @@
 #pragma once
 
 #include <rclcpp/rclcpp.hpp>
-#include <rclcpp_action/rclcpp_action.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
-#include <nav2_msgs/action/navigate_to_pose.hpp>
-
-#include <unordered_map>
 #include <queue>
-#include <memory>
 #include <string>
+#include <memory>
 
-#include "TurtleBot.h"
+#include "issy/srv/add_goal.hpp"
+#include "issy/srv/execute_goals.hpp"
 
 class GoalManager : public rclcpp::Node {
 public:
-    using NavigateToPose = nav2_msgs::action::NavigateToPose;
-    using GoalHandleNavigate = rclcpp_action::ClientGoalHandle<NavigateToPose>;
-
     GoalManager();
-
-    void send_goal(const std::string& robot_namespace, const geometry_msgs::msg::PoseStamped& goal_pose);
-
-    void register_bot(const std::string& name, std::shared_ptr<TurtleBot> bot);
 
     void queue_global_goal(const geometry_msgs::msg::PoseStamped& goal_pose);
     bool has_global_goals() const;
-
     void update();
 
-    bool has_pending_goals(const std::string& name) const; // Deprecated, returns global state
-
 private:
-    std::unordered_map<std::string, std::shared_ptr<TurtleBot>> bots_;
     std::queue<geometry_msgs::msg::PoseStamped> global_goal_queue_;
+
+    rclcpp::Client<issy::srv::AddGoal>::SharedPtr add_goal_client_;
+    rclcpp::Client<issy::srv::ExecuteGoals>::SharedPtr exec_goals_client_;
+    rclcpp::TimerBase::SharedPtr check_timer_;
 };

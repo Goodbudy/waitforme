@@ -1,10 +1,9 @@
 #include <rclcpp/rclcpp.hpp>
-#include "GoalManager.h"
-#include "TurtleBot.h"
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <thread>
 #include <vector>
 #include <memory>
+#include "GoalManager.h"
 
 geometry_msgs::msg::PoseStamped create_goal(double x, double y, double yaw = 0.0) {
     geometry_msgs::msg::PoseStamped goal;
@@ -13,60 +12,43 @@ geometry_msgs::msg::PoseStamped create_goal(double x, double y, double yaw = 0.0
     goal.pose.position.x = x;
     goal.pose.position.y = y;
     goal.pose.position.z = 0.0;
-    goal.pose.orientation.w = 1.0;  // Facing forward
+    goal.pose.orientation.w = 1.0;  // default facing forward
     return goal;
-}
-
-void run_phase(
-    const geometry_msgs::msg::PoseStamped& goal_pose,
-    const std::shared_ptr<GoalManager>& manager,
-    const std::shared_ptr<TurtleBot>& bot)
-{
-    manager->queue_global_goal(goal_pose);
-
-    rclcpp::Rate rate(10.0); // 10Hz update rate
-    while (rclcpp::ok() && !(bot->isHome() && !manager->has_global_goals())) {
-        bot->publishStatus();  // Optional: Keep publishing status during motion
-        manager->update();
-        rate.sleep();
-    }
 }
 
 int main(int argc, char** argv) {
     rclcpp::init(argc, argv);
 
     auto manager = std::make_shared<GoalManager>();
-    auto node = std::make_shared<rclcpp::Node>("tb1_node");
-    auto bot = std::make_shared<TurtleBot>("tb1", node);
-
-    manager->register_bot(bot->getName(), bot);
 
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(manager);
-    executor.add_node(node);
 
     std::thread executor_thread([&executor]() {
         executor.spin();
     });
 
-    geometry_msgs::msg::PoseStamped home = create_goal(3.0, 3.0, 0.0);
     std::vector<geometry_msgs::msg::PoseStamped> task_goals = {
-        create_goal(2.0, 2.5, 0.0),
-        create_goal(1.0, 0.8, 0.0)
+        create_goal(2.0, 2.5),
+        create_goal(1.0, 0.8)
     };
 
-    bot->setHomePosition(home.pose.position.x, home.pose.position.y);
-    bot->setAtHome(true);
+    RCLCPP_INFO(rclcpp::get_logger("main"), "--- Robot starting at home ---");
 
-    for (size_t i = 0; i < task_goals.size(); ++i) {
-        RCLCPP_INFO(rclcpp::get_logger("main"), "--- PHASE %zu: Going to task ---", 2 * i + 1);
-        run_phase(task_goals[i], manager, bot);
-
-        RCLCPP_INFO(rclcpp::get_logger("main"), "--- PHASE %zu: Returning home ---", 2 * i + 2);
-        run_phase(home, manager, bot);
+    for (const auto& goal : task_goals) {
+        manager->queue_global_goal(goal);
     }
 
-    RCLCPP_INFO(rclcpp::get_logger("main"), "Finished all goal phases.");
+    // Wait until all goals are dispatched
+    while (rclcpp::ok() && manager->has_global_goals()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+
+    RCLCPP_INFO(rclcpp::get_logger("main"), "All task goals assigned. Waiting for final homing...");
+
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+
+    RCLCPP_INFO(rclcpp::get_logger("main"), "Finished goal reassignment sequence.");
 
     rclcpp::shutdown();
     executor_thread.join();

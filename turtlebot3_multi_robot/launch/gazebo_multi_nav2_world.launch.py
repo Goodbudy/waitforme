@@ -207,8 +207,7 @@ def generate_launch_description():
         )
         movement = Node(
             package='issy', executable='movementlogic',
-            namespace=[ns], output='screen',
-            condition=IfCondition(LaunchConfiguration('enable_drive'))
+            namespace=[ns], output='screen'
         )
 
         ld.add_action(

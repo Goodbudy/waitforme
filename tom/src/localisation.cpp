@@ -3,7 +3,7 @@
 #include <chrono>
 #include <sstream>
 
-Localisation::Localisation() : Node("localisation_node") {
+Localisation::Localisation() : Node("localisation_node_") {
     publisher_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 10);
     RCLCPP_INFO(this->get_logger(), "Localisation Node Started");
     input_thread_ = std::thread(&Localisation::user_input, this);

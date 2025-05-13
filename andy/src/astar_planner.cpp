@@ -10,6 +10,7 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "visualization_msgs/msg/marker.hpp"
 
 AstarPlanner::AstarPlanner() : Node("astarplanner"), map_ready_(false), current_x_(0.0), current_y_(0.0)
 {
@@ -20,6 +21,10 @@ AstarPlanner::AstarPlanner() : Node("astarplanner"), map_ready_(false), current_
     odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
         "odom", 10,
         std::bind(&AstarPlanner::odomCallback, this, std::placeholders::_1));
+
+    object_sub_ = create_subscription<visualization_msgs::msg::Marker>(
+        "visualization_marker", 10,
+        std::bind(&AstarPlanner::objectCallBack, this, std::placeholders::_1));
 
     auto goal_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
     goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
@@ -111,8 +116,8 @@ void AstarPlanner::goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr
     // 1) A* search on grid:
     // apply the buffer in m
     // pretend object is there
-    newObject(2,2.4,3);
-    obstacle_buffer_radius_ = 0.1;
+    // newObject(2,2.4,3);
+    obstacle_buffer_radius_ = 0.2;
     applyObstacleBuffering(obstacle_buffer_radius_);
     auto grid_path = aStarSearch(current_x_, current_y_, gx, gy);
 
@@ -126,6 +131,58 @@ void AstarPlanner::goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr
     publishPathToRViz(world_path);
 }
 
+void AstarPlanner::objectCallBack(const visualization_msgs::msg::Marker msg)
+{
+    RCLCPP_INFO(this->get_logger(), "New Object Detected");
+    // yes the grid x and y needs to be switched.
+    int gridx = (msg.pose.position.x - origin_x_ - resolution_ / 2) / resolution_;
+    int gridy = (msg.pose.position.y - origin_y_ - resolution_ / 2) / resolution_;
+    RCLCPP_INFO(this->get_logger(), "gridx: %.2f , gridy: %.2f", gridx, gridy);
+    // radius for cylinder is 0.15m
+    if (msg.type == visualization_msgs::msg::Marker::CYLINDER)
+    {
+        int radius_grid = 0.15 / resolution_;
+        int r2 = radius_grid * radius_grid;
+        RCLCPP_ERROR(this->get_logger(), "Object Cylinder at X Pos: %.2f, YPos: %.2f", msg.pose.position.x, msg.pose.position.y);
+        for (int dy = -radius_grid; dy <= radius_grid; ++dy)
+        {
+            for (int dx = -radius_grid; dx <= radius_grid; ++dx)
+            {
+                int nx = gridx + dx;
+                int ny = gridy + dy;
+
+                if (nx >= 0 && ny >= 0 && ny < height_ && nx < width_)
+                {
+                    if (dx * dx + dy * dy <= r2)
+                    {
+                        object_grid_[ny][nx] = 1;
+                    }
+                }
+            }
+        }
+    }
+    // radius roughly 0.2m
+    if (msg.type == visualization_msgs::msg::Marker::CUBE)
+    {
+        int radius_grid = 0.2 / resolution_;
+        RCLCPP_ERROR(this->get_logger(), "Object Cube at X Pos: %.2f, YPos: %.2f", msg.pose.position.x, msg.pose.position.y);
+        for (int dy = -radius_grid; dy <= radius_grid; ++dy)
+        {
+            for (int dx = -radius_grid; dx <= radius_grid; ++dx)
+            {
+                int nx = gridx + dx;
+                int ny = gridy + dy;
+
+                if (nx >= 0 && ny >= 0 && ny < height_ && nx < width_)
+                {
+                    object_grid_[ny][nx] = 1;
+                }
+            }
+        }
+    }
+    const std::vector<Point *> grid_path;
+    saveGridAsImage(object_grid_, "astar_map", grid_path);
+}
 // Eclidiean distace from point to point
 float AstarPlanner::eclidDist(int x1, int y1, int x2, int y2)
 {
@@ -160,8 +217,8 @@ void AstarPlanner::saveGridAsImage(const std::vector<std::vector<int>> &grid, co
     }
     for (const auto &point : path)
     {
-        //RCLCPP_INFO(this->get_logger(), "Path point x: %d, Path point y: %d", point->x, point->y);
-        image.at<cv::Vec3b>(point->y, point->x) = cv::Vec3b(0, 0, 255); // Red (BGR format)
+        // RCLCPP_INFO(this->get_logger(), "Path point x: %d, Path point y: %d", point->x, point->y);
+        image.at<cv::Vec3b>(point->y, point->x) = cv::Vec3b(0, 0, 255); // Red (BGR format)ew
     }
 
     RCLCPP_INFO(this->get_logger(), "image saved");
@@ -205,7 +262,6 @@ void AstarPlanner::publishPathToRViz(const std::vector<std::pair<double, double>
     RCLCPP_INFO(this->get_logger(), "Published path as MarkerArray to RViz with %zu points", world_path.size());
 }
 
-
 std::vector<std::pair<double, double>> AstarPlanner::convertGridToWorld(std::vector<AstarPlanner::Point *> gridPath)
 {
     std::vector<std::pair<double, double>> worldPath;
@@ -214,7 +270,7 @@ std::vector<std::pair<double, double>> AstarPlanner::convertGridToWorld(std::vec
         double wx = path->x * resolution_ + origin_x_ + resolution_ / 2.0;
         double wy = path->y * resolution_ + origin_y_ + resolution_ / 2.0;
         worldPath.emplace_back(wx, wy);
-        //RCLCPP_INFO(this->get_logger(), "world path x: %.2f, y: %.2f", wx, wy);
+        // RCLCPP_INFO(this->get_logger(), "world path x: %.2f, y: %.2f", wx, wy);
     }
     return worldPath;
 }
@@ -284,33 +340,6 @@ void AstarPlanner::applyObstacleBuffering(double buffer)
             }
         }
     }
-}
-
-void AstarPlanner::newObject(double worldx, double worldy, double radius)
-{
-    RCLCPP_INFO(this->get_logger(), "New Object Detected");
-    RCLCPP_INFO(this->get_logger(), "Object XPos: %.2f , YPos: %.2f , Radius %.2f", worldx, worldy, radius);
-    //yes the grid x and y needs to be switched. 
-    int gridx = (worldx - origin_x_ - resolution_/2) / resolution_;
-    int gridy = (worldy - origin_y_ - resolution_/2) / resolution_;;
-
-    RCLCPP_INFO(this->get_logger(), "gridx: %.2f , gridy: %.2f", gridx, gridy);
-
-    for (int dy = -radius; dy <= radius; ++dy)
-                {
-                    for (int dx = -radius; dx <= radius; ++dx)
-                    {
-                        int nx = gridx + dx;
-                        int ny = gridy + dy;
-
-                        if (nx >= 0 && ny >= 0 && ny < height_ && nx < width_)
-                        {
-                            object_grid_[ny][nx] = 1;
-                        }
-                    }
-                }
-
-    //object_grid_[gridx][gridy] = 1;
 }
 // Impliment A* algorithim. Take an initial start X and Y positon, a goal X and Y Position and a map
 // NOTE: x and y positions are relative to the Rviz map, internal conversion are done to change positions to grid locations

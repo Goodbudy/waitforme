@@ -6,9 +6,10 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node, PushRosNamespace
 from ament_index_python.packages import get_package_share_directory
 
+
 def generate_launch_description():
     space = 10.0
-    
+
     set_model = SetEnvironmentVariable(
         name='TURTLEBOT3_MODEL',
         value='waffle_pi'
@@ -54,23 +55,34 @@ def generate_launch_description():
         'nav2_params.yaml'
     )
 
+    # Add a GroupAction to launch nav2 manually with map_server and lifecycle manager
     nav2_bringup = GroupAction(
         actions=[
             PushRosNamespace('tb1'),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    os.path.join(
-                        get_package_share_directory('nav2_bringup'),
-                        'launch',
-                        'bringup_launch.py'
-                    )
-                ),
-                launch_arguments={
-                    'map': map_file,
-                    'use_sim_time': 'True',
-                    'params_file': params_file,
-                    'autostart': 'True'
-                }.items()
+            Node(
+                package='nav2_map_server',
+                executable='map_server',
+                name='map_server',
+                output='screen',
+                parameters=[{'yaml_filename': map_file, 'use_sim_time': True}]
+            ),
+            Node(
+                package='nav2_amcl',
+                executable='amcl',
+                name='amcl',
+                output='screen',
+                parameters=[params_file, {'use_sim_time': True}]
+            ),
+            Node(
+                package='nav2_lifecycle_manager',
+                executable='lifecycle_manager',
+                name='lifecycle_manager_localization',
+                output='screen',
+                parameters=[{
+                    'use_sim_time': True,
+                    'autostart': True,
+                    'node_names': ['map_server', 'amcl']
+                }]
             )
         ]
     )
@@ -106,10 +118,11 @@ def generate_launch_description():
     localisation_node = Node(
         package='tom',
         executable='localisation_node',
-        output='screen'
+        output='screen',
+        parameters=[{'use_sim_time': True}]
     )
     delayed_localisation = TimerAction(
-        period=space + 40.0,
+        period=space + 50.0,
         actions=[localisation_node]
     )
 
@@ -119,7 +132,7 @@ def generate_launch_description():
         output='screen'
     )
     delayed_movement = TimerAction(
-        period=space + 50.0,
+        period=space + 60.0,
         actions=[movement_node]
     )
 
