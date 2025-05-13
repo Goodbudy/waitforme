@@ -24,7 +24,7 @@ ament_target_dependencies(localisation_node rclcpp geometry_msgs nav2_msgs std_m
 
 # Create an executable for the detection node
 add_executable(detection_node src/detection.cpp)
-ament_target_dependencies(detection_node rclcpp geometry_msgs nav2_msgs std_msgs OpenCV sensor_msgs nav_msgs tf2 tf2_geometry_msgs visualization_msgs)
+ament_target_dependencies(detection_node rclcpp geometry_msgs nav2_msgs std_msgs OpenCV sensor_msgs nav_msgs tf2 tf2_ros tf2_geometry_msgs visualization_msgs)
 
 add_executable(people_detector src/people_detector.cpp)
 ament_target_dependencies(people_detector rclcpp sensor_msgs visualization_msgs cv_bridge OpenCV)

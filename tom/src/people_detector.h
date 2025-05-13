@@ -11,6 +11,7 @@
 class PeopleDetector : public rclcpp::Node {
 public:
     PeopleDetector();
+    void captureAndProcessImage();
 
 private:
     void imageCallback(const sensor_msgs::msg::Image::SharedPtr msg);
@@ -26,6 +27,7 @@ private:
     cv::HOGDescriptor hog_;
     std::vector<cv::Rect> detected_people_;
     std::vector<geometry_msgs::msg::Point> people_positions_;
+    cv::VideoCapture webcam_;
 };
 
 #endif // PEOPLE_DETECTOR_H

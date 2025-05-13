@@ -1,3 +1,6 @@
+
+
+
 #include "detection.h"
 #include <cmath>
 #include <utility>
@@ -6,17 +9,75 @@
 #include <std_msgs/msg/color_rgba.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 
-
-
+/*
 ObjDetect::ObjDetect() : Node("detection_node"), firstCent(true), ct_(0)
 {
+    // Adjust QoS for the scan subscription
+    rclcpp::QoS qos_profile{rclcpp::SensorDataQoS()};
+    qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT); // or RELIABLE
+
     scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-        "/scan", 10, std::bind(&ObjDetect::scanCallback, this, std::placeholders::_1));
+        "/scan", qos_profile, std::bind(&ObjDetect::scanCallback, this, std::placeholders::_1));
+
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
         "/odom", 10, std::bind(&ObjDetect::odomCallback, this, std::placeholders::_1));
+
     marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
         "/visualization_marker", 10);
 }
+*/
+//testing w/ tf2
+ObjDetect::ObjDetect() : Node("detection_node"), firstCent(true), ct_(0), 
+    tf_buffer_(this->get_clock()), tf_listener_(tf_buffer_)
+{
+    // Adjust QoS for the scan subscription
+    rclcpp::QoS qos_profile{rclcpp::SensorDataQoS()};
+    qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT); // or RELIABLE
+
+    scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
+        "/scan", qos_profile, std::bind(&ObjDetect::scanCallback, this, std::placeholders::_1));
+
+    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+        "/odom", 10, std::bind(&ObjDetect::odomCallback, this, std::placeholders::_1));
+
+    marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+        "/visualization_marker", 10);
+}
+
+//testing w/ tf2 :transform between frames
+geometry_msgs::msg::Point ObjDetect::transformPoint(const geometry_msgs::msg::Point &input_point, 
+    const std::string &from_frame, 
+    const std::string &to_frame)
+{
+    geometry_msgs::msg::PointStamped input_point_stamped;
+    input_point_stamped.header.frame_id = from_frame;
+    input_point_stamped.header.stamp = this->get_clock()->now();
+    input_point_stamped.point = input_point;
+
+    geometry_msgs::msg::PointStamped output_point_stamped;
+
+    // Define timeout as tf2::Duration
+    tf2::Duration timeout = tf2::durationFromSec(0.1);
+
+    try
+        {
+        output_point_stamped = tf_buffer_.transform(
+        input_point_stamped, 
+        to_frame, 
+        tf2::TimePointZero,   // Use TimePointZero for the latest available transform
+        from_frame, 
+        timeout
+        );
+        }
+    catch (tf2::TransformException &ex)
+        {
+        RCLCPP_WARN(this->get_logger(), "Could not transform %s to %s: %s", from_frame.c_str(), to_frame.c_str(), ex.what());
+        }
+
+    return output_point_stamped.point;
+}
+
+
 
 void ObjDetect::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan)
 {
@@ -106,7 +167,7 @@ void ObjDetect::detectCylinder(const std::vector<geometry_msgs::msg::Point> &seg
         double R = c / (2 * fabs(sin(theta / 2)));
 
         double targetRadius = 0.15;
-        double tolerance_ = 0.01;
+        double tolerance_ = 0.02;
 
         if (fabs(R - targetRadius) < tolerance_)
         {
@@ -153,7 +214,7 @@ void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segme
     double sideA = hypot(p2.x - p1.x, p2.y - p1.y);
     double sideB = hypot(p3.x - p2.x, p3.y - p2.y);
 
-    double targetLength = 0.25;
+    double targetLength = 0.22;
     double tolerance = 0.05;
 
     if (isThis90(segment) &&
@@ -217,7 +278,7 @@ geometry_msgs::msg::Point ObjDetect::findCentre(geometry_msgs::msg::Point P1, ge
 
 bool ObjDetect::checkExisting(geometry_msgs::msg::Point centre)
 {
-    duplicate_threshold_ = 0.3;
+    duplicate_threshold_ = 0.4;
     for (const auto &existing_centre : centres)
     {
         if (hypot(centre.x - existing_centre.x, centre.y - existing_centre.y) < duplicate_threshold_)
@@ -281,6 +342,7 @@ visualization_msgs::msg::Marker ObjDetect::produceMarkerCylinder(geometry_msgs::
     return marker;
 }
 
+/*
 geometry_msgs::msg::Point ObjDetect::localToGlobal(const nav_msgs::msg::Odometry &global, const geometry_msgs::msg::Point &local)
 {
     geometry_msgs::msg::Point pt;
@@ -289,6 +351,13 @@ geometry_msgs::msg::Point ObjDetect::localToGlobal(const nav_msgs::msg::Odometry
     pt.y = global.pose.pose.position.y + (local.x * sin(yaw) + local.y * cos(yaw));
     pt.z = 0;
     return pt;
+}
+*/
+//Testing w/ tf2: updated L2G
+geometry_msgs::msg::Point ObjDetect::localToGlobal(const nav_msgs::msg::Odometry &global, 
+    const geometry_msgs::msg::Point &local)
+{
+return transformPoint(local, "odom", "map");
 }
 
 bool ObjDetect::isThisAWall(const std::vector<geometry_msgs::msg::Point> &segment)

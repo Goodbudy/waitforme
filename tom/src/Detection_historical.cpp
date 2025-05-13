@@ -16,13 +16,30 @@ Isthis90
 #include <nav_msgs/msg/occupancy_grid.hpp>
 
 
-
+/*
 ObjDetect::ObjDetect() : Node("detection_node"), firstCent(true), ct_(0)
 {
     scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
         "/scan", 10, std::bind(&ObjDetect::scanCallback, this, std::placeholders::_1));
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
         "/odom", 10, std::bind(&ObjDetect::odomCallback, this, std::placeholders::_1));
+    marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+        "/visualization_marker", 10);
+}
+*/
+
+ObjDetect::ObjDetect() : Node("detection_node"), firstCent(true), ct_(0)
+{
+    // Adjust QoS for the scan subscription
+    rclcpp::QoS qos_profile{rclcpp::SensorDataQoS()};
+    qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT); // or RELIABLE
+
+    scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
+        "/scan", qos_profile, std::bind(&ObjDetect::scanCallback, this, std::placeholders::_1));
+
+    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+        "/odom", 10, std::bind(&ObjDetect::odomCallback, this, std::placeholders::_1));
+
     marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
         "/visualization_marker", 10);
 }
