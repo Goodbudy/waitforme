@@ -13,9 +13,17 @@ using namespace std::chrono_literals;
 
 GoalManager::GoalManager()
 : Node("manager") {
-    add_goal_client_ = this->create_client<issy::srv::AddGoal>("add_goal");
-    exec_goals_client_ = this->create_client<issy::srv::ExecuteGoals>("execute_goals");
-
+    add_goal_srv_ = this->create_service<issy::srv::AddGoal>(
+    "add_goal",
+    std::bind(&GoalManager::handleAddGoal, this, std::placeholders::_1, std::placeholders::_2)
+    );
+    exec_goals_clients_[tb1] = this->create_client<issy::srv::ExecuteGoals>("/tb1/execute_goals");
+    exec_goals_clients_[tb2] = this->create_client<issy::srv::ExecuteGoals>("/tb2/execute_goals");
+    
+    // for (const auto& ns : robot_namespaces_) {
+    //    exec_goals_clients_[ns] = this->create_client<issy::srv::ExecuteGoals>("/" + ns + "/execute_goals");
+    // }
+    
     check_timer_ = this->create_wall_timer(
         1s, std::bind(&GoalManager::update, this)
     );
@@ -49,22 +57,35 @@ void GoalManager::queue_global_goal(const geometry_msgs::msg::PoseStamped& goal_
 void GoalManager::update() {
     if (!has_global_goals()) return;
 
-    if (!exec_goals_client_->wait_for_service(1s)) {
-        RCLCPP_WARN(this->get_logger(), "[Manager] execute_goals service not available");
-        return;
+    auto request = std::make_shared<issy::srv::ExecuteGoals::Request>();
+    bool goal_dispatched = false;
+
+    for (auto& [ns, client] : exec_goals_clients_) {
+        if (!client->wait_for_service(500ms)) {
+            RCLCPP_WARN(this->get_logger(), "[Manager] [%s] execute_goals service not available", ns.c_str());
+            continue;
+        }
+
+        // Capture namespace for use in callback
+        client->async_send_request(request,
+            [this, ns](rclcpp::Client<issy::srv::ExecuteGoals>::SharedFuture future) {
+                auto response = future.get();
+                if (response->success) {
+                    RCLCPP_INFO(this->get_logger(), "[Manager] [%s] %s", ns.c_str(), response->message.c_str());
+                    global_goal_queue_.pop();  // Only pop once someone has accepted
+                } else {
+                    RCLCPP_INFO(this->get_logger(), "[Manager] [%s] Goal execution declined.", ns.c_str());
+                }
+            });
+
+        // Send request to only one robot per cycle
+        goal_dispatched = true;
+        break;
     }
 
-    auto request = std::make_shared<issy::srv::ExecuteGoals::Request>();
-    exec_goals_client_->async_send_request(request,
-        [this](rclcpp::Client<issy::srv::ExecuteGoals>::SharedFuture future) {
-            auto response = future.get();
-            if (response->success) {
-                RCLCPP_INFO(this->get_logger(), "[Manager] %s", response->message.c_str());
-                global_goal_queue_.pop();
-            } else {
-                RCLCPP_INFO(this->get_logger(), "[Manager] No robots available to assign goal.");
-            }
-        });
+    if (!goal_dispatched) {
+        RCLCPP_WARN(this->get_logger(), "[Manager] No available robots to execute goals.");
+    }
 }
 
 bool GoalManager::has_global_goals() const {
