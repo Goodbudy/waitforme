@@ -162,9 +162,9 @@ void AstarPlanner::objectCallBack(const visualization_msgs::msg::Marker msg)
         }
     }
     // radius roughly 0.2m
-    if (msg.type == visualization_msgs::msg::Marker::CUBE)
+    else if (msg.type == visualization_msgs::msg::Marker::CUBE)
     {
-        int radius_grid = 0.2 / resolution_;
+        int radius_grid = 0.11 / resolution_;
         RCLCPP_ERROR(this->get_logger(), "Object Cube at X Pos: %.2f, YPos: %.2f", msg.pose.position.x, msg.pose.position.y);
         for (int dy = -radius_grid; dy <= radius_grid; ++dy)
         {
@@ -180,6 +180,7 @@ void AstarPlanner::objectCallBack(const visualization_msgs::msg::Marker msg)
             }
         }
     }
+    else RCLCPP_ERROR(this->get_logger(), "Object is not a Cylinder or Cube");
     const std::vector<Point *> grid_path;
     saveGridAsImage(object_grid_, "astar_map", grid_path);
 }
