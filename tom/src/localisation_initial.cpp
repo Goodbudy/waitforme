@@ -5,14 +5,26 @@
 
 class AutoLocalise : public rclcpp::Node {
 public:
+    // AutoLocalise() : Node("localisation_node_initial") {
+    //     this->declare_parameter("use_sim_time", true);  // make sure sim time is active
+    //     publisher_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 10);
+    //     timer_ = this->create_wall_timer(
+    //         std::chrono::seconds(2),
+    //         std::bind(&AutoLocalise::set_initial_pose, this)
+    //     );
+    // }
+
     AutoLocalise() : Node("localisation_node_initial") {
-        this->declare_parameter("use_sim_time", true);  // make sure sim time is active
+        if (!this->has_parameter("use_sim_time")) {
+            this->declare_parameter("use_sim_time", true);  // Declare only if not already declared
+        }
         publisher_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 10);
         timer_ = this->create_wall_timer(
             std::chrono::seconds(2),
             std::bind(&AutoLocalise::set_initial_pose, this)
         );
     }
+    
 
 private:
     void set_initial_pose() {
