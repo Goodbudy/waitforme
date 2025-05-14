@@ -14,13 +14,23 @@ find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 # Include the src directory
 include_directories(${CMAKE_SOURCE_DIR}/src)
+include_directories(include ${EIGEN3_INCLUDE_DIRS})
 
 # Create an executable for your localisation node
-add_executable(localisation_node src/localisation_initial.cpp)
+add_executable(localisation_node src/localisation.cpp)
 ament_target_dependencies(localisation_node rclcpp geometry_msgs nav2_msgs std_msgs OpenCV sensor_msgs nav_msgs tf2 tf2_geometry_msgs visualization_msgs)
+
+#localisation hardcoded
+add_executable(localisation_node_initial src/localisation_initial.cpp)
+ament_target_dependencies(localisation_node_initial rclcpp geometry_msgs nav2_msgs std_msgs OpenCV sensor_msgs nav_msgs tf2 tf2_geometry_msgs visualization_msgs)
+
+#localisation V3
+add_executable(kalman_filter_node src/kalman_filter_node.cpp)
+ament_target_dependencies(kalman_filter_node rclcpp nav_msgs Eigen3)
 
 # Create an executable for the detection node
 add_executable(detection_node src/detection.cpp)
@@ -34,6 +44,14 @@ target_link_libraries(detection_node ${OpenCV_LIBS})
 
 # Install the executable for localisation node
 install(TARGETS localisation_node
+  DESTINATION lib/${PROJECT_NAME})
+
+# localisation Hardcoded
+install(TARGETS localisation_node_initial
+  DESTINATION lib/${PROJECT_NAME})
+
+# Localisation V3
+install(TARGETS kalman_filter_node
   DESTINATION lib/${PROJECT_NAME})
 
 # Install the detection node executable
