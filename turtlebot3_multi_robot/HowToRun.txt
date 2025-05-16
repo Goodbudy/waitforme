@@ -1,58 +1,125 @@
-launching in sim:
+HOW TO RUN THE MULTI-ROBOT SYSTEM
+==================================
 
-  How many robots?
-    in gazebo_multi_nav2_world.launch.py
-    robots = [
-        {'name': 'tb1', 'x_pose': '3.0', 'y_pose': '3.0'},
-        {'name': 'tb2', 'x_pose': '2.9', 'y_pose': '1.6'},
-        # add more robots here
-    ]
-    
-  When ready to launch run:
-    ros2 launch turtlebot3_multi_robot gazebo_multi_nav2_world.launch.py
+======================
+RUNNING IN SIMULATION
+======================
 
-  Sending gaols:
-    - you can run pre made utests from my package:
-      ros2 run turtlebot3_multi_robot Utest_single_goal_distribution
-        Sends a single goal to each robot
-      ros2 run turtlebot3_multi_robot Utest_goal_reassignment
-        Sends multiple goals to only tb1 to test status and its impact on goal reassignment
-      MOST RELEVANT FOR INTEGRATION
-      ros2 run turtlebot3_multi_robot Utest_optimized_goal_assignment
-        Sends 4 goals to goal manager who distributes the goals to any the avaible turtlebots based on the status of their states
-    - Use the client action service to send a goal yourself:
-      ros2 service call /add_goal issy/srv/AddGoal "{x: 2.0, y: 2.2}"
+1. Set how many robots you want:
+   - Edit the file: gazebo_multi_nav2_world.launch.py
+   - Modify the robots list:
 
-Launching in hardware:
-  How many robots?
+     robots = [
+         {'name': 'tb1', 'x_pose': '3.0', 'y_pose': '3.0'},
+         {'name': 'tb2', 'x_pose': '2.9', 'y_pose': '1.6'},
+         # Add more robots here
+     ]
 
-    in gazebo_multi_nav2_world.launch.py
+2. Launch simulation:
+   ros2 launch turtlebot3_multi_robot gazebo_multi_nav2_world.launch.py
+
+
+=======================
+RUNNING ON HARDWARE
+=======================
+
+1. Set how many robots you want:
+
+   a) In gazebo_multi_nav2_world.launch.py:
       robots = [
           {'name': 'tb1', 'x_pose': '3.0', 'y_pose': '3.0'},
           {'name': 'tb2', 'x_pose': '2.9', 'y_pose': '1.6'},
-          # add more robots here
+          # Add more robots here
       ]
 
-    in general_settings.yaml
-    robots:
-      - name: tb1
-      x_pose: 0.0
-      y_pose: 0.0
-      z_pose: 0.01
-      - name: tb2
-      x_pose: 0.0
-      y_pose: 0.0
-      z_pose: 0.01
-      - name: tb3
-      x_pose: 0.0
-      y_pose: 0.0
-      z_pose: 0.01
-      - name: tb4
-      x_pose: 0.0
-      y_pose: 0.0
-      z_pose: 0.01
-      - name: tb5
-      x_pose: 0.0
-      y_pose: 0.0
-      z_pose: 0.01
-  
+   b) In general_settings.yaml:
+      robots:
+        - name: tb1
+          x_pose: 0.0
+          y_pose: 0.0
+          z_pose: 0.01
+        - name: tb2
+          x_pose: 0.0
+          y_pose: 0.0
+          z_pose: 0.01
+        - name: tb3
+          x_pose: 0.0
+          y_pose: 0.0
+          z_pose: 0.01
+        - name: tb4
+          x_pose: 0.0
+          y_pose: 0.0
+          z_pose: 0.01
+        - name: tb5
+          x_pose: 0.0
+          y_pose: 0.0
+          z_pose: 0.01
+
+
+2. Connecting to TurtleBots from Central Computer:
+
+   a) Open a terminal on the main computer.
+
+   b) Open a terminal for each TurtleBot.
+
+   c) SSH into each TurtleBot:
+      ssh ubuntu@<ip-address>
+      Example IP for lab testing: 192.168.0.2XX (XX is the robot ID)
+
+   d) On each TurtleBot, create the workspace and package:
+      mkdir -p ~/rs2_ws/src
+      cd ~/rs2_ws/src
+      ros2 pkg create multi_robot_bringup --build-type ament_cmake
+      cd multi_robot_bringup
+      mkdir launch
+
+   e) Replace CMakeLists.txt content with:
+      echo "cmake_minimum_required(VERSION 3.5)
+      project(multi_robot_bringup)
+      find_package(ament_cmake REQUIRED)
+      install(DIRECTORY
+        launch
+        DESTINATION share/\${PROJECT_NAME}
+      )
+      ament_package()" > CMakeLists.txt
+
+   f) From the central computer, copy the launch file to each TurtleBot:
+      scp launch/namespaced_robot.launch.py \
+      ubuntu@<ip-address>:~/rs2_ws/src/multi_robot_bringup/launch/
+
+   g) Repeat steps c–f for each TurtleBot.
+
+
+3. On each TurtleBot:
+   cd ~/rs2_ws
+   colcon build --symlink-install
+   source install/setup.bash
+   ros2 launch multi_robot_bringup namespaced_robot.launch.py namespace:=<robot_name>
+
+   - Use namespaces in the format tb1, tb2, ..., tb5.
+
+
+4. On the central computer:
+   ros2 launch turtlebot3_multi_robot multi_robot_nav2_bringup.launch.py
+
+
+==============
+SENDING GOALS
+==============
+
+Option 1 – Run pre-made tests from my package:
+
+  a) Single goal to each robot:
+     ros2 run turtlebot3_multi_robot Utest_single_goal_distribution
+
+  b) Multiple goals to one robot (tb1) to test reassignment:
+     ros2 run turtlebot3_multi_robot Utest_goal_reassignment
+
+  c) MAIN TEST FOR INTEGRATION – GoalManager distributes dynamically:
+     ros2 run turtlebot3_multi_robot Utest_optimized_goal_assignment
+
+
+Option 2 – Send your own goal with the AddGoal service:
+
+  ros2 service call /add_goal issy/srv/AddGoal "{x: 2.0, y: 2.2}"
+
