@@ -1,0 +1,58 @@
+launching in sim:
+
+  How many robots?
+    in gazebo_multi_nav2_world.launch.py
+    robots = [
+        {'name': 'tb1', 'x_pose': '3.0', 'y_pose': '3.0'},
+        {'name': 'tb2', 'x_pose': '2.9', 'y_pose': '1.6'},
+        # add more robots here
+    ]
+    
+  When ready to launch run:
+    ros2 launch turtlebot3_multi_robot gazebo_multi_nav2_world.launch.py
+
+  Sending gaols:
+    - you can run pre made utests from my package:
+      ros2 run turtlebot3_multi_robot Utest_single_goal_distribution
+        Sends a single goal to each robot
+      ros2 run turtlebot3_multi_robot Utest_goal_reassignment
+        Sends multiple goals to only tb1 to test status and its impact on goal reassignment
+      MOST RELEVANT FOR INTEGRATION
+      ros2 run turtlebot3_multi_robot Utest_optimized_goal_assignment
+        Sends 4 goals to goal manager who distributes the goals to any the avaible turtlebots based on the status of their states
+    - Use the client action service to send a goal yourself:
+      ros2 service call /add_goal issy/srv/AddGoal "{x: 2.0, y: 2.2}"
+
+Launching in hardware:
+  How many robots?
+
+    in gazebo_multi_nav2_world.launch.py
+      robots = [
+          {'name': 'tb1', 'x_pose': '3.0', 'y_pose': '3.0'},
+          {'name': 'tb2', 'x_pose': '2.9', 'y_pose': '1.6'},
+          # add more robots here
+      ]
+
+    in general_settings.yaml
+    robots:
+      - name: tb1
+      x_pose: 0.0
+      y_pose: 0.0
+      z_pose: 0.01
+      - name: tb2
+      x_pose: 0.0
+      y_pose: 0.0
+      z_pose: 0.01
+      - name: tb3
+      x_pose: 0.0
+      y_pose: 0.0
+      z_pose: 0.01
+      - name: tb4
+      x_pose: 0.0
+      y_pose: 0.0
+      z_pose: 0.01
+      - name: tb5
+      x_pose: 0.0
+      y_pose: 0.0
+      z_pose: 0.01
+  
