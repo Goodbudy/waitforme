@@ -19,10 +19,12 @@ public:
             this->declare_parameter("use_sim_time", true);  // Declare only if not already declared
         }
         publisher_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 10);
+        odom_publisher_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("/odom", 10);
         timer_ = this->create_wall_timer(
             std::chrono::seconds(2),
             std::bind(&AutoLocalise::set_initial_pose, this)
         );
+        
     }
     
 
@@ -31,8 +33,10 @@ private:
         auto msg = geometry_msgs::msg::PoseWithCovarianceStamped();
         msg.header.stamp = this->get_clock()->now();
         msg.header.frame_id = "map";
-        msg.pose.pose.position.x = 3.12;
-        msg.pose.pose.position.y = 3.31;
+       // msg.pose.pose.position.x = 3.12;
+       // msg.pose.pose.position.y = 3.31;
+        msg.pose.pose.position.x = 0.00;
+        msg.pose.pose.position.y = 0.00;
         msg.pose.pose.orientation.w = 1.0;
 
         // Minimal 6x6 covariance matrix for x, y, and yaw
@@ -42,6 +46,7 @@ private:
         msg.pose.covariance[35] = 0.0685;      // yaw
 
         publisher_->publish(msg);
+        odom_publisher_->publish(msg);
         RCLCPP_INFO(this->get_logger(), "✅ Published initial pose");
 
         // Shutdown after publishing
@@ -49,6 +54,7 @@ private:
     }
 
     rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr publisher_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr odom_publisher_;
     rclcpp::TimerBase::SharedPtr timer_;
 };
 

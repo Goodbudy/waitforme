@@ -1,6 +1,7 @@
 // #include "people_detector.h"
 // #include <geometry_msgs/msg/point.hpp>
 // #include <visualization_msgs/msg/marker.hpp>
+// #include <opencv2/opencv.hpp>
 
 // PeopleDetector::PeopleDetector() : Node("people_detector"), hog_() {
 //     // Initialize HOG detector with the default people detector
@@ -101,6 +102,7 @@
 //     return 0;
 // }
 
+//////////
 
 #include "people_detector.h"
 #include <geometry_msgs/msg/point.hpp>

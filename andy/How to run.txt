@@ -50,7 +50,7 @@ Useful information about A* program: https://chatgpt.com/share/67ecab6e-ce20-800
 
 service call
 send a goal:
-ros2 topic pub /astar_goal geometry_msgs/msg/PoseStamped "{header: {frame_id: 'map'}, pose: {position: {x: 2.0, y: 0.5, z: 0.0}, orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0}}}" --once
+ros2 topic pub /astar_goal geometry_msgs/msg/PoseStamped "{header: {frame_id: 'map'}, pose: {position: {x: -1.7, y: 1.4, z: 0.0}, orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0}}}" --once
 
 send a object:
 ros2 topic pub /visualization_marker visualization_msgs/msg/Marker "{
