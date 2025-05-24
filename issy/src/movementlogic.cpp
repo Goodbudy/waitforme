@@ -286,8 +286,8 @@ public:
       robot_ns_.erase(0, 1);
 
     int id = robot_ns_.back() - '0';
-    double base_x = 3.4;
-    double base_y = 3.2;
+    double base_x = 3.2;
+    double base_y = 2.9;
     double offset = 0.3;  // avoid collision
 
     double x_home = base_x;
@@ -406,8 +406,9 @@ private:
     switch (bot_.state) {
       case State::HOMING:
         bot_.state = State::IDLE;
+        notifyManagerIdle();
         break;
-      case State::EXEC_GOAL_PATH:
+        case State::EXEC_GOAL_PATH:
         bot_.state = State::WAITING_AT_GOAL;
         bot_.wait_timer = create_wall_timer(
           std::chrono::seconds(5), [this]() {
@@ -418,20 +419,30 @@ private:
         break;
       case State::RETURNING_HOME_PATH:
         bot_.state = State::IDLE;
-        auto client = this->create_client<issy::srv::NotifyIdle>("notify_idle");
-        auto request = std::make_shared<issy::srv::NotifyIdle::Request>();
-        request->robot_namespace = std::string(this->get_namespace()).substr(1);
-
-        if (client->wait_for_service(std::chrono::seconds(1)))
-        {
-          client->async_send_request(request);
-        }
-
+        notifyManagerIdle();
         break;
       // default:
       //   break;
     }
   }
+
+  void notifyManagerIdle() {
+    auto client = this->create_client<issy::srv::NotifyIdle>("/notify_idle");
+    if (!client->wait_for_service(std::chrono::seconds(1))) {
+      RCLCPP_WARN(this->get_logger(), "NotifyIdle service not available");
+      return;
+    }
+  
+    // get_namespace() returns " /tb2" for instance
+    const char *cns = this->get_namespace();
+    // skip the leading slash if present
+    const char *robot_ns = (cns[0]=='/' ? cns+1 : cns);
+  
+    auto req = std::make_shared<issy::srv::NotifyIdle::Request>();
+    req->robot_namespace = robot_ns;  // std::string has an implicit ctor from const char*
+    client->async_send_request(req);
+  }
+  
 
   void handleAddGoal(const std::shared_ptr<issy::srv::AddGoal::Request> req,
                      std::shared_ptr<issy::srv::AddGoal::Response> res) {

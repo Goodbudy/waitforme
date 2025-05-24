@@ -30,7 +30,7 @@ def generate_launch_description():
 
     # Robot definitions
     robots = [
-        {'name': 'tb1', 'x_pose': '3.4', 'y_pose': '3.2'},
+        {'name': 'tb1', 'x_pose': '3.2', 'y_pose': '2.9'},
         {'name': 'tb2', 'x_pose': '3.0', 'y_pose': '1.3'},
         # add more robots here
     ]

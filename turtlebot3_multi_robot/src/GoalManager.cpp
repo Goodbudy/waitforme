@@ -60,7 +60,13 @@ res->message = "Goal successfully added to global queue.";
 
 RCLCPP_INFO(this->get_logger(), "[Manager] Goal received via service: (%.2f, %.2f)",
 req->x, req->y);
-}
+
+std::queue<std::pair<double,double>> goal_queue_;
+goal_queue_.emplace(req->x, req->y);
+
+RCLCPP_INFO(this->get_logger(), "Added goal (%.2f, %.2f), queue size=%zu",
+req->x, req->y, goal_queue_.size());
+    }
 
 // Optional: also allow internal tests to push goals
 void GoalManager::queue_global_goal(const geometry_msgs::msg::PoseStamped& goal_pose) {
