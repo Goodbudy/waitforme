@@ -47,8 +47,15 @@ ament_target_dependencies(Utest_optimized_goal_assignment
   rclcpp std_msgs geometry_msgs nav_msgs nav2_msgs rclcpp_action issy
 )
 
+add_executable(manager
+  src/managermain.cpp
+  src/GoalManager.cpp
+)
+ament_target_dependencies(manager rclcpp std_msgs geometry_msgs nav_msgs nav2_msgs rclcpp_action issy)
+
 # Install executables
 install(TARGETS
+  manager
   Utest_single_goal_distribution
   Utest_goal_reassignment
   Utest_optimized_goal_assignment
