@@ -15,21 +15,24 @@
 #include <opencv2/imgcodecs.hpp>
 #include "rcpputils/filesystem_helper.hpp"
 
-AstarPlanner::AstarPlanner() 
-: Node("astarplanner", rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)),
-  map_ready_(false),
-  current_x_(0.0),
-  current_y_(0.0)
+AstarPlanner::AstarPlanner()
+    : Node("astarplanner", rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)),
+      map_ready_(false),
+      current_x_(0.0),
+      current_y_(0.0)
 {
     RCLCPP_INFO(get_logger(), "start constructor: AstarPlanner node started");
     // QoS for goal subscription
     auto goal_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
 
     std::string yaml_file;
-    if (this->get_parameter("map_yaml_path", yaml_file)) {
+    if (this->get_parameter("map_yaml_path", yaml_file))
+    {
         RCLCPP_INFO(this->get_logger(), "In constructor if statement: map_yaml_path param = %s", yaml_file.c_str());
         loadMapFromFile(yaml_file);
-    } else {
+    }
+    else
+    {
         RCLCPP_ERROR(this->get_logger(), "No map_yaml_path provided.");
     }
 
@@ -100,13 +103,14 @@ struct AstarPlanner::ComparePoint
     }
 };
 
-void AstarPlanner::loadMapFromFile(const std::string& yaml_file)
+void AstarPlanner::loadMapFromFile(const std::string &yaml_file)
 {
     RCLCPP_ERROR(this->get_logger(), "ENTER LOADING MAP");
     YAML::Node config = YAML::LoadFile(yaml_file);
     std::string image_file = config["image"].as<std::string>();
     // If image_file is relative, make it absolute based on the YAML path
-    if (image_file[0] != '/') {
+    if (image_file[0] != '/')
+    {
         auto yaml_dir = rcpputils::fs::path(yaml_file).parent_path();
         image_file = (yaml_dir / image_file).string();
     }
@@ -116,19 +120,30 @@ void AstarPlanner::loadMapFromFile(const std::string& yaml_file)
     origin_y_ = config["origin"][1].as<double>();
 
     cv::Mat image = cv::imread(image_file, cv::IMREAD_UNCHANGED);
-    if (image.empty()) {
+    if (image.empty())
+    {
         RCLCPP_ERROR(this->get_logger(), "Failed to load map image: %s", image_file.c_str());
         return;
     }
+
+    cv::flip(image, image, 0); // Flip around x-axis (vertical)
 
     width_ = image.cols;
     height_ = image.rows;
 
     grid_.resize(height_, std::vector<int>(width_, 0));
-    for (int y = 0; y < height_; ++y) {
-        for (int x = 0; x < width_; ++x) {
+    for (int y = 0; y < height_; ++y)
+    {
+        for (int x = 0; x < width_; ++x)
+        {
             uint8_t pixel = image.at<uchar>(y, x);
-            grid_[y][x] = (pixel < 250) ? 1 : 0;  // Threshold for obstacles
+            // grid_[y][x] = (pixel < 250) ? 1 : 0;  // Threshold for obstacles
+            if (pixel == 0)
+                grid_[y][x] = 1; // Occupied
+            else if (pixel == 205)
+                grid_[y][x] = 1; // Unknown, treat as obstacle
+            else
+                grid_[y][x] = 0; // Free
         }
     }
 
@@ -191,8 +206,8 @@ void AstarPlanner::goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr
     // 1) A* search on grid:
     // apply the buffer in m
     // pretend object is theregrid_
-    //newObject(2,2.4,3);
-    obstacle_buffer_radius_ = 0.01;
+    // newObject(2,2.4,3);
+    obstacle_buffer_radius_ = 0.1;
     applyObstacleBuffering(obstacle_buffer_radius_);
     auto grid_path = aStarSearch(current_x_, current_y_, gx, gy);
 
@@ -255,7 +270,8 @@ void AstarPlanner::objectCallBack(const visualization_msgs::msg::Marker msg)
             }
         }
     }
-    else RCLCPP_ERROR(this->get_logger(), "Object is not a Cylinder or Cube");
+    else
+        RCLCPP_ERROR(this->get_logger(), "Object is not a Cylinder or Cube");
     const std::vector<Point *> grid_path;
     saveGridAsImage(object_grid_, "astar_map", grid_path);
 }
@@ -291,18 +307,21 @@ void AstarPlanner::saveGridAsImage(const std::vector<std::vector<int>> &grid, co
             }
         }
     }
+
+    cv::Mat rotated;
+    cv::rotate(image, rotated, cv::ROTATE_90_COUNTERCLOCKWISE);
     for (const auto &point : path)
     {
         // RCLCPP_INFO(this->get_logger(), "Path point x: %d, Path point y: %d", point->x, point->y);
-        image.at<cv::Vec3b>(point->x, point->y) = cv::Vec3b(0, 0, 255); // Red (BGR format)ew
+        rotated.at<cv::Vec3b>(point->x, point->y) = cv::Vec3b(0, 0, 255); // Red (BGR format)ew
     }
 
     RCLCPP_INFO(this->get_logger(), "image saved");
     std::string filePath = filename + ".png";
-    cv::Mat rotated;
     cv::Mat flip;
-    cv::flip(image, flip, 0); // flip vertically to match map coordinates
-    cv::rotate(flip, rotated, cv::ROTATE_90_CLOCKWISE);
+    cv::rotate(rotated, rotated, cv::ROTATE_90_CLOCKWISE);
+    cv::rotate(rotated, rotated, cv::ROTATE_90_CLOCKWISE);
+    // cv::flip(image, flip, 0); // flip vertically to match map coordinates
     cv::imwrite(filePath, rotated);
 }
 
@@ -384,7 +403,7 @@ void AstarPlanner::applyObstacleBuffering(double buffer)
 
     RCLCPP_INFO(this->get_logger(), "Buffering");
     RCLCPP_INFO(this->get_logger(), "Buffer size in cells: %d", buffer_size);
-    //RCLCPP_INFO(this->get_logger(), "Original grid cell (10,10) = %d", original_grid_[10][10]);
+    // RCLCPP_INFO(this->get_logger(), "Original grid cell (10,10) = %d", original_grid_[10][10]);
 
     int total_obstacles = 0;
     for (int y = 0; y < grid.size(); ++y)
