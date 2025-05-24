@@ -15,10 +15,12 @@ find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(image_transport REQUIRED)
 
 # Include the src directory
 include_directories(${CMAKE_SOURCE_DIR}/src)
 include_directories(include ${EIGEN3_INCLUDE_DIRS})
+include_directories(include ${OpenCV_INCLUDE_DIRS})
 
 # Create an executable for your localisation node
 add_executable(localisation_node src/localisation.cpp)
@@ -37,7 +39,7 @@ add_executable(detection_node src/detection.cpp)
 ament_target_dependencies(detection_node rclcpp geometry_msgs nav2_msgs std_msgs OpenCV sensor_msgs nav_msgs tf2 tf2_ros tf2_geometry_msgs visualization_msgs)
 
 add_executable(people_detector src/people_detector.cpp)
-ament_target_dependencies(people_detector rclcpp sensor_msgs visualization_msgs cv_bridge OpenCV)
+ament_target_dependencies(people_detector rclcpp sensor_msgs visualization_msgs cv_bridge OpenCV image_transport)
 
 # Link OpenCV for the detection node
 target_link_libraries(detection_node ${OpenCV_LIBS})
@@ -66,5 +68,6 @@ DESTINATION lib/${PROJECT_NAME}
 # Install launch files (if you have any)
 install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME})
+
 
 ament_package()

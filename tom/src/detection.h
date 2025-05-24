@@ -35,7 +35,7 @@ private:
     std::vector<std::vector<geometry_msgs::msg::Point>> countSegments(const sensor_msgs::msg::LaserScan::SharedPtr scan);
     void detectCylinder(const std::vector<geometry_msgs::msg::Point> &segment);
     void detectSquare(const std::vector<geometry_msgs::msg::Point> &segment);
-
+    void UnknownOBJ(const std::vector<geometry_msgs::msg::Point> &segment);
     // Geometry and transformations
     geometry_msgs::msg::Point findCentre(geometry_msgs::msg::Point P1, geometry_msgs::msg::Point P2, double r);
     bool checkExisting(geometry_msgs::msg::Point centre);
@@ -55,14 +55,16 @@ private:
     // Duplicate threshold for detection
     double duplicate_threshold_;
 
+    /*
     //Testing w/tf2: TF2 buffer and listener
-    tf2_ros::Buffer tf_buffer_;
+   /tf2_ros::Buffer tf_buffer_;
     tf2_ros::TransformListener tf_listener_;
 
     //Testing w/ tf2: new function
     geometry_msgs::msg::Point transformPoint(const geometry_msgs::msg::Point &input_point, 
         const std::string &from_frame, 
         const std::string &to_frame);
+    */
 
     // Line fitting and angle calculation utilities
     /* std::pair<float, float> fitLine(

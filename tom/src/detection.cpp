@@ -1,6 +1,4 @@
 
-
-
 #include "detection.h"
 #include <cmath>
 #include <utility>
@@ -9,7 +7,7 @@
 #include <std_msgs/msg/color_rgba.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 
-/*
+
 ObjDetect::ObjDetect() : Node("detection_node"), firstCent(true), ct_(0)
 {
     // Adjust QoS for the scan subscription
@@ -25,8 +23,9 @@ ObjDetect::ObjDetect() : Node("detection_node"), firstCent(true), ct_(0)
     marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
         "/visualization_marker", 10);
 }
-*/
+
 //testing w/ tf2
+/*
 ObjDetect::ObjDetect() : Node("detection_node"), firstCent(true), ct_(0), 
     tf_buffer_(this->get_clock()), tf_listener_(tf_buffer_)
 {
@@ -43,7 +42,8 @@ ObjDetect::ObjDetect() : Node("detection_node"), firstCent(true), ct_(0),
     marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
         "/visualization_marker", 10);
 }
-
+*/
+/*
 //testing w/ tf2 :transform between frames
 geometry_msgs::msg::Point ObjDetect::transformPoint(const geometry_msgs::msg::Point &input_point, 
     const std::string &from_frame, 
@@ -77,7 +77,7 @@ geometry_msgs::msg::Point ObjDetect::transformPoint(const geometry_msgs::msg::Po
     return output_point_stamped.point;
 }
 
-
+*/
 
 void ObjDetect::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan)
 {
@@ -140,7 +140,10 @@ std::vector<std::vector<geometry_msgs::msg::Point>> ObjDetect::countSegments(con
                 } else if (isThis90(currentSegment)) {
                     //std::cout << "90-degree corner detected" << std::endl;
                     detectSquare(currentSegment);
+                } else {
+                    UnknownOBJ(currentSegment);
                 }
+
             }
             segStarted = false;
         }
@@ -197,11 +200,9 @@ void ObjDetect::detectCylinder(const std::vector<geometry_msgs::msg::Point> &seg
                 RCLCPP_INFO(this->get_logger(), "Circle with radius ~%.2fm detected. Center: x = %.2f, y = %.2f, z = %.2f", targetRadius, centre.x, centre.y, centre.z);
                 marker_pub_->publish(produceMarkerCylinder(centre, visualization_msgs::msg::Marker::CYLINDER, "black"));
             }
-        }
+        }   
     }
 }
-
-
 
 void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segment)
 {
@@ -242,6 +243,52 @@ void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segme
     }
 }
 
+void ObjDetect::UnknownOBJ(const std::vector<geometry_msgs::msg::Point> &segment)
+{
+    // Check if segment is too close (any point closer than 0.2 m)
+    bool tooClose = false;
+    for (const auto &pt : segment)
+    {
+        double dist = hypot(pt.x, pt.y);
+        if (dist < 0.2)
+        {
+            tooClose = true;
+            break;
+        }
+    }
+    if (!tooClose)
+    return;
+
+    // Calculate segment centroid
+    geometry_msgs::msg::Point centroid;
+    centroid.x = 0.0;
+    centroid.y = 0.0;
+    centroid.z = 0.0;
+
+    for (const auto &pt : segment)
+    {
+        centroid.x += pt.x;
+        centroid.y += pt.y;
+        centroid.z += pt.z;
+    }
+
+    centroid.x /= segment.size();
+    centroid.y /= segment.size();
+    centroid.z /= segment.size();
+
+    if (!checkExisting(centroid) || firstCent)
+    {
+        firstCent = false;
+        centres.push_back(centroid);
+
+        RCLCPP_INFO(this->get_logger(), "unknown object detected at x = %.2f, y = %.2f", centroid.x, centroid.y);
+
+        // Reuse the cylinder marker for now with a different color or style
+        auto marker = produceMarkerCylinder(centroid, visualization_msgs::msg::Marker::CYLINDER, "green");
+        marker_pub_->publish(marker);
+    }
+
+}
 
 geometry_msgs::msg::Point ObjDetect::findCentre(geometry_msgs::msg::Point P1, geometry_msgs::msg::Point P2, double r)
 {
@@ -278,7 +325,7 @@ geometry_msgs::msg::Point ObjDetect::findCentre(geometry_msgs::msg::Point P1, ge
 
 bool ObjDetect::checkExisting(geometry_msgs::msg::Point centre)
 {
-    duplicate_threshold_ = 0.4;
+    duplicate_threshold_ = 0.3;
     for (const auto &existing_centre : centres)
     {
         if (hypot(centre.x - existing_centre.x, centre.y - existing_centre.y) < duplicate_threshold_)
@@ -342,7 +389,7 @@ visualization_msgs::msg::Marker ObjDetect::produceMarkerCylinder(geometry_msgs::
     return marker;
 }
 
-/*
+
 geometry_msgs::msg::Point ObjDetect::localToGlobal(const nav_msgs::msg::Odometry &global, const geometry_msgs::msg::Point &local)
 {
     geometry_msgs::msg::Point pt;
@@ -352,14 +399,15 @@ geometry_msgs::msg::Point ObjDetect::localToGlobal(const nav_msgs::msg::Odometry
     pt.z = 0;
     return pt;
 }
-*/
+
 //Testing w/ tf2: updated L2G
+/*
 geometry_msgs::msg::Point ObjDetect::localToGlobal(const nav_msgs::msg::Odometry &global, 
     const geometry_msgs::msg::Point &local)
 {
 return transformPoint(local, "odom", "map");
 }
-
+*/
 bool ObjDetect::isThisAWall(const std::vector<geometry_msgs::msg::Point> &segment)
 {
     return hypot(segment.front().x - segment.back().x, segment.front().y - segment.back().y) > 0.6;

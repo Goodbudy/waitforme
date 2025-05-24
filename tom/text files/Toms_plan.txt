@@ -17,3 +17,12 @@ New To Do
 this will be a neural network, which i have fed data so it can hopefully recognise differnet objects
 
 Note: OpenCV is only useful when using camera data, not for Lidar, hence not used for credit. Maybe distinction/HD?
+
+
+opencv needs to be installed for certain things to working
+
+ros2 localisation nodes need to be installed with this
+sudo apt install ros-humble-robot-localization
+
+for camera maybe this
+sudo apt install ros-humble-image-transport ros-humble-compressed-image-transport
