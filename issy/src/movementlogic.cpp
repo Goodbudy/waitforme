@@ -258,10 +258,11 @@
 #include <geometry_msgs/msg/twist.hpp>
 #include "issy/srv/add_goal.hpp"
 #include "issy/srv/execute_goals.hpp"
+#include "issy/srv/notify_idle.hpp"
 #include <queue>
 #include <vector>
 #include <cmath>
-#include <map>
+#include <unordered_map>
 
 enum class State {
   HOMING,
@@ -277,176 +278,180 @@ static double normalizeAngle(double ang) {
   return ang;
 }
 
-struct Robot {
-  std::string ns;
-  double x_home, y_home;
-  double current_x = 0.0, current_y = 0.0, current_yaw = 0.0;
-  State state = State::HOMING;
-  size_t current_target_idx = 0;
-  std::queue<std::pair<double, double>> goal_queue;
-  std::vector<geometry_msgs::msg::PoseStamped> path;
-
-  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr goal_pub;
-  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
-  rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub;
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub;
-  rclcpp::TimerBase::SharedPtr wait_timer;
-};
-
 class MovementLogic : public rclcpp::Node {
 public:
   MovementLogic() : Node("movement_logic"), tolerance_(0.2) {
-    robot_namespaces_ = {"tb1", "tb2"};
-    for (size_t i = 0; i < robot_namespaces_.size(); ++i) {
-      double x_home = 3.5;
-      double y_home = 3.2 + i * 1.0; // linearly increasing y_home
-      setupRobot(robot_namespaces_[i], x_home, y_home);
-    }
+    robot_ns_ = this->get_namespace();
+    if (!robot_ns_.empty() && robot_ns_.front() == '/')
+      robot_ns_.erase(0, 1);
+
+    int id = robot_ns_.back() - '0';
+    double base_x = 3.4;
+    double base_y = 3.2;
+    double offset = 0.3;  // avoid collision
+
+    double x_home = base_x;
+    double y_home = base_y - offset * (id - 1);  // tb1 = 0 offset, tb2 = 1 offset...
+
+    setupRobot(x_home, y_home);
+
+    RCLCPP_INFO(get_logger(), "Startup [%s]: homing to (%.2f, %.2f)", robot_ns_.c_str(), x_home, y_home);
+    publishGoal(x_home, y_home);
 
     add_goal_srv_ = create_service<issy::srv::AddGoal>(
-      "add_goal", std::bind(&MovementLogic::handleAddGoal, this, std::placeholders::_1, std::placeholders::_2));
+      "/add_goal",
+      std::bind(&MovementLogic::handleAddGoal, this, std::placeholders::_1, std::placeholders::_2));
 
     exec_goals_srv_ = create_service<issy::srv::ExecuteGoals>(
-      "execute_goals", std::bind(&MovementLogic::handleExecuteGoals, this, std::placeholders::_1, std::placeholders::_2));
+      "execute_goals",
+      std::bind(&MovementLogic::handleExecuteGoals, this, std::placeholders::_1, std::placeholders::_2));
+
+    path_sub_ = create_subscription<nav_msgs::msg::Path>(
+      "planned_path", 10,
+      [this](const nav_msgs::msg::Path::SharedPtr msg) {
+        bot_.path = msg->poses;
+        bot_.current_target_idx = 0;
+      });
 
     follow_timer_ = create_wall_timer(std::chrono::milliseconds(100), std::bind(&MovementLogic::followPath, this));
   }
 
 private:
-  std::map<std::string, Robot> robots_;
-  std::vector<std::string> robot_namespaces_;
+  struct Robot {
+    double x_home, y_home;
+    double current_x = 0.0, current_y = 0.0, current_yaw = 0.0;
+    State state = State::HOMING;
+    size_t current_target_idx = 0;
+    std::queue<std::pair<double, double>> goal_queue;
+    std::vector<geometry_msgs::msg::PoseStamped> path;
+
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr goal_pub;
+    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub;
+    rclcpp::TimerBase::SharedPtr wait_timer;
+  } bot_;
+
+  std::string robot_ns_;
   rclcpp::Service<issy::srv::AddGoal>::SharedPtr add_goal_srv_;
   rclcpp::Service<issy::srv::ExecuteGoals>::SharedPtr exec_goals_srv_;
+  rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
   rclcpp::TimerBase::SharedPtr follow_timer_;
   double tolerance_;
 
   const double kp_lin_ = 0.5, kp_ang_ = 1.0;
   const double ang_tol_ = 0.1, max_lin_vel_ = 0.2, max_ang_vel_ = 1.0;
 
-  void setupRobot(const std::string &ns, double x_home, double y_home) {
-    Robot bot;
-    bot.ns = ns;
-    bot.x_home = x_home;
-    bot.y_home = y_home;
+  void setupRobot(double x_home, double y_home) {
+    bot_.x_home = x_home;
+    bot_.y_home = y_home;
 
     auto goal_qos = rclcpp::QoS(1).transient_local();
-    bot.goal_pub = create_publisher<geometry_msgs::msg::PoseStamped>('/' + ns + "/astar_goal", goal_qos);
-    bot.cmd_vel_pub = create_publisher<geometry_msgs::msg::Twist>('/' + ns + "/cmd_vel", 10);
-
-    bot.path_sub = create_subscription<nav_msgs::msg::Path>('/' + ns + "/planned_path", 10,
-      [this, ns](const nav_msgs::msg::Path::SharedPtr msg) {
-        robots_[ns].path = msg->poses;
-        robots_[ns].current_target_idx = 0;
-      });
-
-    bot.odom_sub = create_subscription<nav_msgs::msg::Odometry>('/' + ns + "/odom", 10,
-      [this, ns](const nav_msgs::msg::Odometry::SharedPtr msg) {
-        auto &r = robots_[ns];
-        r.current_x = msg->pose.pose.position.x;
-        r.current_y = msg->pose.pose.position.y;
+    bot_.goal_pub = create_publisher<geometry_msgs::msg::PoseStamped>("astar_goal", goal_qos);
+    bot_.cmd_vel_pub = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
+    bot_.odom_sub = create_subscription<nav_msgs::msg::Odometry>("odom", 10,
+      [this](const nav_msgs::msg::Odometry::SharedPtr msg) {
+        bot_.current_x = msg->pose.pose.position.x;
+        bot_.current_y = msg->pose.pose.position.y;
         double qx = msg->pose.pose.orientation.x;
         double qy = msg->pose.pose.orientation.y;
         double qz = msg->pose.pose.orientation.z;
         double qw = msg->pose.pose.orientation.w;
         double siny = 2.0 * (qw * qz + qx * qy);
         double cosy = 1.0 - 2.0 * (qy * qy + qz * qz);
-        r.current_yaw = std::atan2(siny, cosy);
+        bot_.current_yaw = std::atan2(siny, cosy);
       });
-
-    robots_[ns] = bot;
-    publishGoal(ns, x_home, y_home);
   }
 
-  void publishGoal(const std::string &ns, double x, double y) {
+  void publishGoal(double x, double y) {
     geometry_msgs::msg::PoseStamped goal;
     goal.header.frame_id = "map";
     goal.header.stamp = now();
     goal.pose.position.x = x;
     goal.pose.position.y = y;
     goal.pose.orientation.w = 1.0;
-    robots_[ns].goal_pub->publish(goal);
+    bot_.goal_pub->publish(goal);
   }
 
   void followPath() {
-    for (auto &[ns, bot] : robots_) {
-      if (bot.path.empty() || bot.current_target_idx >= bot.path.size()) continue;
+    if (bot_.path.empty() || bot_.current_target_idx >= bot_.path.size()) return;
 
-      auto &t = bot.path[bot.current_target_idx].pose;
-      double dx = t.position.x - bot.current_x;
-      double dy = t.position.y - bot.current_y;
-      double dist = std::hypot(dx, dy);
+    auto &t = bot_.path[bot_.current_target_idx].pose;
+    double dx = t.position.x - bot_.current_x;
+    double dy = t.position.y - bot_.current_y;
+    double dist = std::hypot(dx, dy);
 
-      if (dist < tolerance_) {
-        bot.current_target_idx++;
-        if (bot.current_target_idx >= bot.path.size()) {
-          onPathComplete(ns);
-        }
-        continue;
+    if (dist < tolerance_) {
+      bot_.current_target_idx++;
+      if (bot_.current_target_idx >= bot_.path.size()) {
+        onPathComplete();
       }
-
-      double desired_yaw = std::atan2(dy, dx);
-      double yaw_err = normalizeAngle(desired_yaw - bot.current_yaw);
-      double lin_vel = (std::fabs(yaw_err) < ang_tol_) ? kp_lin_ * dist : 0.0;
-      double ang_vel = kp_ang_ * yaw_err;
-
-      geometry_msgs::msg::Twist cmd;
-      cmd.linear.x = std::clamp(lin_vel, -max_lin_vel_, max_lin_vel_);
-      cmd.angular.z = std::clamp(ang_vel, -max_ang_vel_, max_ang_vel_);
-      bot.cmd_vel_pub->publish(cmd);
+      return;
     }
+
+    double desired_yaw = std::atan2(dy, dx);
+    double yaw_err = normalizeAngle(desired_yaw - bot_.current_yaw);
+    double lin_vel = (std::fabs(yaw_err) < ang_tol_) ? kp_lin_ * dist : 0.0;
+    double ang_vel = kp_ang_ * yaw_err;
+
+    geometry_msgs::msg::Twist cmd;
+    cmd.linear.x = std::clamp(lin_vel, -max_lin_vel_, max_lin_vel_);
+    cmd.angular.z = std::clamp(ang_vel, -max_ang_vel_, max_ang_vel_);
+    bot_.cmd_vel_pub->publish(cmd);
   }
 
-  void onPathComplete(const std::string &ns) {
-    auto &bot = robots_[ns];
-    geometry_msgs::msg::Twist stop{};
-    bot.cmd_vel_pub->publish(stop);
+  void onPathComplete() {
+    geometry_msgs::msg::Twist stop;
+    bot_.cmd_vel_pub->publish(stop);
 
-    switch (bot.state) {
+    switch (bot_.state) {
       case State::HOMING:
-        bot.state = State::IDLE;
+        bot_.state = State::IDLE;
         break;
       case State::EXEC_GOAL_PATH:
-        bot.state = State::WAITING_AT_GOAL;
-        bot.wait_timer = create_wall_timer(
-          std::chrono::seconds(5),
-          [this, ns]() {
-            robots_[ns].wait_timer->cancel();
-            robots_[ns].state = State::RETURNING_HOME_PATH;
-            publishGoal(ns, robots_[ns].x_home, robots_[ns].y_home);
+        bot_.state = State::WAITING_AT_GOAL;
+        bot_.wait_timer = create_wall_timer(
+          std::chrono::seconds(5), [this]() {
+            bot_.wait_timer->cancel();
+            bot_.state = State::RETURNING_HOME_PATH;
+            publishGoal(bot_.x_home, bot_.y_home);
           });
         break;
       case State::RETURNING_HOME_PATH:
-        bot.state = State::IDLE;
+        bot_.state = State::IDLE;
+        auto client = this->create_client<issy::srv::NotifyIdle>("notify_idle");
+        auto request = std::make_shared<issy::srv::NotifyIdle::Request>();
+        request->robot_namespace = std::string(this->get_namespace()).substr(1);
+
+        if (client->wait_for_service(std::chrono::seconds(1)))
+        {
+          client->async_send_request(request);
+        }
+
         break;
-      default:
-        break;
+      // default:
+      //   break;
     }
   }
 
   void handleAddGoal(const std::shared_ptr<issy::srv::AddGoal::Request> req,
                      std::shared_ptr<issy::srv::AddGoal::Response> res) {
-    for (auto &[ns, bot] : robots_) {
-      bot.goal_queue.emplace(req->x, req->y);
-    }
+    bot_.goal_queue.emplace(req->x, req->y);
     res->success = true;
-    res->message = "Goal added to all queues";
+    res->message = "Goal added to robot queue.";
   }
 
-  void handleExecuteGoals(const std::shared_ptr<issy::srv::ExecuteGoals::Request>,
+  void handleExecuteGoals(const std::shared_ptr<issy::srv::ExecuteGoals::Request> req,
                           std::shared_ptr<issy::srv::ExecuteGoals::Response> res) {
-    for (auto &[ns, bot] : robots_) {
-      if (bot.state == State::IDLE && !bot.goal_queue.empty()) {
-        auto [x, y] = bot.goal_queue.front();
-        bot.goal_queue.pop();
-        bot.state = State::EXEC_GOAL_PATH;
-        publishGoal(ns, x, y);
-        res->success = true;
-        res->message = "Goal dispatched to " + ns;
-        return;
-      }
-    }
-    res->success = false;
-    res->message = "No idle robot available";
+                            if (bot_.state == State::IDLE) {
+                              bot_.state = State::EXEC_GOAL_PATH;
+                              publishGoal(req->x, req->y);
+                              res->success = true;
+                              res->message = "Goal directly dispatched to " + robot_ns_;
+                            } else {
+                              res->success = false;
+                              res->message = "Robot is busy.";
+                            }
+                            
   }
 };
 

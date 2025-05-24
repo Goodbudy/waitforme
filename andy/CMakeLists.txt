@@ -14,13 +14,20 @@ find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(yaml-cpp REQUIRED)
+find_package(rcpputils REQUIRED)
+
+add_executable(astar_planner src/astar_planner.cpp)
+ament_target_dependencies(astar_planner rclcpp_action rclcpp nav_msgs geometry_msgs std_msgs rcpputils visualization_msgs OpenCV)
+target_link_libraries(astar_planner yaml-cpp rcpputils::rcpputils)
+
 
 # add executables
 add_executable(path_planner src/path_planner.cpp)
 ament_target_dependencies(path_planner rclcpp rclcpp_action nav2_msgs geometry_msgs)
 
-add_executable(astar_planner src/astar_planner.cpp)
-ament_target_dependencies(astar_planner rclcpp rclcpp_action nav_msgs geometry_msgs OpenCV visualization_msgs)
+# add_executable(astar_planner src/astar_planner.cpp)
+# ament_target_dependencies(astar_planner rclcpp rclcpp_action nav_msgs geometry_msgs OpenCV visualization_msgs)
 
 # Install the executable
 install(TARGETS

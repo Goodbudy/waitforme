@@ -24,15 +24,14 @@ from launch_ros.actions import Node
 from launch.event_handlers import OnProcessExit
 from launch.conditions import IfCondition
 
-
 def generate_launch_description():
     ld = LaunchDescription()
     space = 10.0
 
     # Robot definitions
     robots = [
-        {'name': 'tb1', 'x_pose': '3.0', 'y_pose': '3.0'},
-        {'name': 'tb2', 'x_pose': '2.9', 'y_pose': '1.6'},
+        {'name': 'tb1', 'x_pose': '3.4', 'y_pose': '3.2'},
+        {'name': 'tb2', 'x_pose': '3.0', 'y_pose': '1.3'},
         # add more robots here
     ]
 
@@ -57,6 +56,41 @@ def generate_launch_description():
             'params', 'nav2_params.yaml'),
         description='Path to Nav2 parameters'))
 
+        # For each robot: add namespaced astar_planner and detection_node
+    for i, robot in enumerate(robots):
+        ns = f"/{robot['name']}"
+        ld.add_action(Node(
+                package='andy', executable='astar_planner',
+                namespace=ns,
+                output='screen',
+                parameters=[{
+                    'map_yaml_path': os.path.join(
+                        get_package_share_directory('turtlebot3_multi_robot'),
+                        'worlds', 'GalleryMapHD.yaml'
+                    ),
+                    'use_sim_time': use_sim_time
+                }]
+            ))
+        # detection_node = TimerAction(
+        #     period=space + 5 + i * 2,
+        #     actions=[Node(
+        #         package='tom',
+        #         executable='detection_node',
+        #         namespace=ns,
+        #         output='screen',
+        #         parameters=[{
+        #             'use_sim_time': True
+        #         }],
+        #         remappings=[
+        #             ('tf', 'tf'),
+        #             ('tf_static', 'tf_static'),
+        #             ('scan', f'{ns}/scan'),
+        #             ('odom', f'{ns}/odom')
+        #         ]
+        #     )]
+        # )
+        # ld.add_action(detection_node)
+        
     # Gazebo server & client
     world_file = os.path.join(
         get_package_share_directory('turtlebot3_gazebo'),
@@ -78,7 +112,7 @@ def generate_launch_description():
     )
 
     # Map server & lifecycle
-    ld.add_action(Node(
+    map_server = (Node(
         package='nav2_map_server', executable='map_server', name='map_server',
         output='screen',
         parameters=[{
@@ -88,6 +122,7 @@ def generate_launch_description():
         }],
         remappings=[('/tf', 'tf'), ('/tf_static', 'tf_static')]
     ))
+    ld.add_action(map_server)
     ld.add_action(Node(
         package='nav2_lifecycle_manager',
         executable='lifecycle_manager', name='lifecycle_manager_map_server',
@@ -162,17 +197,10 @@ def generate_launch_description():
             )
         last_spawn = spawn_entity
 
-    # Delayed nodes for andy and tom
-    astar_node = Node(package='andy', executable='astar_planner', output='screen')
-    detection_node = Node(package='tom', executable='detection_node', output='screen')
-    ld.add_action(TimerAction(period=space, actions=[astar_node]))
-    ld.add_action(TimerAction(period=space + 10.0, actions=[detection_node]))
-
     # After all robots spawned, start RViz, drive, and movement logic per robot
     last_spawn_event = last_spawn
     for robot in robots:
         ns = f"/{robot['name']}"
-        # Initial pose publisher
         msg = (
             f"{{header: {{frame_id: map}}, pose: {{pose: {{position: {{x: {robot['x_pose']},"
             f" y: {robot['y_pose']}, z: 0.1}}, orientation: {{x: 0.0, y: 0.0, z: 0.0, w: 1.0}}}}}}}}"
@@ -210,14 +238,21 @@ def generate_launch_description():
             namespace=[ns], output='screen'
         )
 
+        delayed_movement = TimerAction(
+            period=space + 50.0,
+            actions=[movement]
+        )
+
         ld.add_action(
             RegisterEventHandler(
                 event_handler=OnProcessExit(
                     target_action=last_spawn_event,
-                    on_exit=[init_pose, rviz, drive, movement]
+                    on_exit=[init_pose, rviz, drive, delayed_movement]
                 )
             )
         )
+
         last_spawn_event = init_pose
 
     return ld
+

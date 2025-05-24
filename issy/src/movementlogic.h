@@ -28,6 +28,7 @@ public:
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr odom_sub_;
     rclcpp::Service<issy::srv::AddGoal>::SharedPtr add_goal_service_;
     rclcpp::Service<issy::srv::ExecuteGoals>::SharedPtr execute_goals_service_;
+    rclcpp::Service<issy::srv::NotifyIdle>::SharedPtr notify_idle_srv_;
     rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
 
     double x_home, y_home;

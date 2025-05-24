@@ -51,7 +51,8 @@ class AstarPlanner : public rclcpp::Node {
     void saveGridAsImage(const std::vector<std::vector<int>>& grid, const std::string& filename, const std::vector<Point*>& path);
     void publishPathToRViz(const std::vector<std::pair<double, double>> &);
     std::vector<Point*> aStarSearch(double startX, double startY, double goalX, double goalY);
-    void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+    void loadMapFromFile(const std::string& yaml_file);
+    // void mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
     void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
     void goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
     void objectCallBack(const visualization_msgs::msg::Marker msg);

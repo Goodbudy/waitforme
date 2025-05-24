@@ -6,7 +6,7 @@
 #include <string>
 #include <memory>
 #include <map>
-
+#include "issy/srv/notify_idle.hpp"
 #include "issy/srv/add_goal.hpp"
 #include "issy/srv/execute_goals.hpp"
 
@@ -17,6 +17,8 @@ public:
     void queue_global_goal(const geometry_msgs::msg::PoseStamped& goal_pose);  // Optional: for test code
     bool has_global_goals() const;
     void update();
+    std::unordered_map<std::string, bool> robot_busy_;
+    rclcpp::Service<issy::srv::NotifyIdle>::SharedPtr notify_idle_srv_;
 
 private:
     std::queue<geometry_msgs::msg::PoseStamped> global_goal_queue_;

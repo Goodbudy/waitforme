@@ -11,12 +11,32 @@
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "visualization_msgs/msg/marker.hpp"
+#include <yaml-cpp/yaml.h>
+#include <opencv2/imgcodecs.hpp>
+#include "rcpputils/filesystem_helper.hpp"
 
-AstarPlanner::AstarPlanner() : Node("astarplanner"), map_ready_(false), current_x_(0.0), current_y_(0.0)
+AstarPlanner::AstarPlanner() 
+: Node("astarplanner", rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)),
+  map_ready_(false),
+  current_x_(0.0),
+  current_y_(0.0)
 {
-    map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
-        "map", 10,
-        std::bind(&AstarPlanner::mapCallback, this, std::placeholders::_1));
+    RCLCPP_INFO(get_logger(), "start constructor: AstarPlanner node started");
+    // QoS for goal subscription
+    auto goal_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
+
+    std::string yaml_file;
+    if (this->get_parameter("map_yaml_path", yaml_file)) {
+        RCLCPP_INFO(this->get_logger(), "In constructor if statement: map_yaml_path param = %s", yaml_file.c_str());
+        loadMapFromFile(yaml_file);
+    } else {
+        RCLCPP_ERROR(this->get_logger(), "No map_yaml_path provided.");
+    }
+
+    // Subscriptions and publishers — scoped by ROS namespace automatically
+    // map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
+    //     "/map", 10,
+    //     std::bind(&AstarPlanner::mapCallback, this, std::placeholders::_1));
 
     odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
         "odom", 10,
@@ -26,17 +46,31 @@ AstarPlanner::AstarPlanner() : Node("astarplanner"), map_ready_(false), current_
         "visualization_marker", 10,
         std::bind(&AstarPlanner::objectCallBack, this, std::placeholders::_1));
 
-    auto goal_qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
     goal_sub_ = create_subscription<geometry_msgs::msg::PoseStamped>(
         "astar_goal", goal_qos,
         std::bind(&AstarPlanner::goalCallback, this, std::placeholders::_1));
 
     path_pub_ = create_publisher<nav_msgs::msg::Path>("planned_path", 10);
+    path_marker_pub_ = create_publisher<visualization_msgs::msg::MarkerArray>("astar_path", 10);
 
-    path_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("astar_path", 10);
+    // RCLCPP_INFO(get_logger(), "Waiting for map to become available...");
+    // rclcpp::Rate wait_rate(10); // 10 Hz
+    // int max_attempts = 50;
+    // int attempts = 0;
 
-    RCLCPP_INFO(get_logger(), "AstarPlanner node started");
-};
+    // while (rclcpp::ok() && !map_ready_ && attempts++ < max_attempts) {
+    //     rclcpp::spin_some(this->get_node_base_interface());
+    //     wait_rate.sleep();
+    // }
+
+    // if (map_ready_) {
+    //     RCLCPP_INFO(get_logger(), "Map is ready. AstarPlanner fully initialized.");
+    // } else {
+    //     RCLCPP_WARN(get_logger(), "Map not received after waiting. AstarPlanner may fail to plan.");
+    // }
+
+    RCLCPP_INFO(get_logger(), "end cnostructor: AstarPlanner node started");
+}
 
 // Each node represents a point on the grid.
 // The cost is the distance travelled so far from the start
@@ -66,31 +100,72 @@ struct AstarPlanner::ComparePoint
     }
 };
 
-void AstarPlanner::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+void AstarPlanner::loadMapFromFile(const std::string& yaml_file)
 {
-    width_ = msg->info.width;
-    height_ = msg->info.height;
-    origin_x_ = msg->info.origin.position.x;
-    origin_y_ = msg->info.origin.position.y;
-    resolution_ = msg->info.resolution;
+    RCLCPP_ERROR(this->get_logger(), "ENTER LOADING MAP");
+    YAML::Node config = YAML::LoadFile(yaml_file);
+    std::string image_file = config["image"].as<std::string>();
+    // If image_file is relative, make it absolute based on the YAML path
+    if (image_file[0] != '/') {
+        auto yaml_dir = rcpputils::fs::path(yaml_file).parent_path();
+        image_file = (yaml_dir / image_file).string();
+    }
 
-    grid_.assign(height_, std::vector<int>(width_, 0));
-    for (size_t y = 0; y < height_; ++y)
-    {
-        for (size_t x = 0; x < width_; ++x)
-        {
-            int idx = y * width_ + x;
-            int val = msg->data[idx];
-            grid_[y][x] = (val == 100 || val == -1) ? 1 : 0;
+    resolution_ = config["resolution"].as<double>();
+    origin_x_ = config["origin"][0].as<double>();
+    origin_y_ = config["origin"][1].as<double>();
+
+    cv::Mat image = cv::imread(image_file, cv::IMREAD_UNCHANGED);
+    if (image.empty()) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to load map image: %s", image_file.c_str());
+        return;
+    }
+
+    width_ = image.cols;
+    height_ = image.rows;
+
+    grid_.resize(height_, std::vector<int>(width_, 0));
+    for (int y = 0; y < height_; ++y) {
+        for (int x = 0; x < width_; ++x) {
+            uint8_t pixel = image.at<uchar>(y, x);
+            grid_[y][x] = (pixel < 250) ? 1 : 0;  // Threshold for obstacles
         }
     }
+
     original_grid_ = grid_;
     object_grid_ = grid_;
     map_ready_ = true;
-    RCLCPP_INFO(get_logger(), "Map received: %zux%zu", width_, height_);
-    // inflateObstacles();
-    // RCLCPP_INFO(get_logger(), "Inflated obstacles by %d cells", inflation_radius_cells_);
+
+    RCLCPP_ERROR(this->get_logger(), "Map loaded from file: %s (%zux%zu)", yaml_file.c_str(), width_, height_);
 }
+
+// void AstarPlanner::mapCallback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+// {
+//     RCLCPP_WARN(this->get_logger(), "Entered mapCallback");
+
+//     width_ = msg->info.width;
+//     height_ = msg->info.height;
+//     origin_x_ = msg->info.origin.position.x;
+//     origin_y_ = msg->info.origin.position.y;
+//     resolution_ = msg->info.resolution;
+
+//     grid_.assign(height_, std::vector<int>(width_, 0));
+//     for (size_t y = 0; y < height_; ++y)
+//     {
+//         for (size_t x = 0; x < width_; ++x)
+//         {
+//             int idx = y * width_ + x;
+//             int val = msg->data[idx];
+//             grid_[y][x] = (val == 100 || val == -1) ? 1 : 0;
+//         }
+//     }
+//     original_grid_ = grid_;
+//     object_grid_ = grid_;
+//     map_ready_ = true;
+//     RCLCPP_ERROR(get_logger(), "Map received: %zux%zu", width_, height_);
+//     // inflateObstacles();
+//     // RCLCPP_INFO(get_logger(), "Inflated obstacles by %d cells", inflation_radius_cells_);
+// }
 
 void AstarPlanner::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
@@ -101,11 +176,11 @@ void AstarPlanner::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 
 void AstarPlanner::goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
 {
-    if (!map_ready_)
-    {
-        RCLCPP_WARN(get_logger(), "Map not ready, cannot plan");
-        return;
-    }
+    // if (!map_ready_)
+    // {
+    //     RCLCPP_WARN(get_logger(), "Map not ready, cannot plan");
+    //     return;
+    // }
 
     double gx = msg->pose.position.x;
     double gy = msg->pose.position.y;
@@ -117,8 +192,8 @@ void AstarPlanner::goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr
     // apply the buffer in m
     // pretend object is there
     // newObject(2,2.4,3);
-    obstacle_buffer_radius_ = 0.2;
-    applyObstacleBuffering(obstacle_buffer_radius_);
+    // obstacle_buffer_radius_ = 0.2;
+    // applyObstacleBuffering(obstacle_buffer_radius_);
     auto grid_path = aStarSearch(current_x_, current_y_, gx, gy);
 
     // 2) Save occupancy + path to PNG:
@@ -137,7 +212,7 @@ void AstarPlanner::objectCallBack(const visualization_msgs::msg::Marker msg)
     // yes the grid x and y needs to be switched.
     int gridx = (msg.pose.position.x - origin_x_ - resolution_ / 2) / resolution_;
     int gridy = (msg.pose.position.y - origin_y_ - resolution_ / 2) / resolution_;
-    RCLCPP_INFO(this->get_logger(), "gridx: %.2f , gridy: %.2f", gridx, gridy);
+    RCLCPP_INFO(this->get_logger(), "gridx: %d , gridy: %d", gridx, gridy);
     // radius for cylinder is 0.15m
     if (msg.type == visualization_msgs::msg::Marker::CYLINDER)
     {
@@ -236,7 +311,7 @@ void AstarPlanner::publishPathToRViz(const std::vector<std::pair<double, double>
     visualization_msgs::msg::MarkerArray marker_array;
 
     visualization_msgs::msg::Marker line_strip;
-    line_strip.header.frame_id = "map";
+    line_strip.header.frame_id = "/map";
     line_strip.header.stamp = rclcpp::Clock().now();
     line_strip.ns = "astar_path";
     line_strip.id = 0;
@@ -280,13 +355,13 @@ void AstarPlanner::publishPath(std::vector<std::pair<double, double>> worldPath)
 {
     nav_msgs::msg::Path rosPath;
     rosPath.header.stamp = this->get_clock()->now();
-    rosPath.header.frame_id = "map"; // Make sure it matches your TF
+    rosPath.header.frame_id = "/map"; // Make sure it matches your TF
 
     for (const auto &[x, y] : worldPath)
     {
         geometry_msgs::msg::PoseStamped pose;
         pose.header.stamp = this->get_clock()->now();
-        pose.header.frame_id = "map"; // Consistency with the path header
+        pose.header.frame_id = "/map"; // Consistency with the path header
 
         pose.pose.position.x = x;
         pose.pose.position.y = y;
