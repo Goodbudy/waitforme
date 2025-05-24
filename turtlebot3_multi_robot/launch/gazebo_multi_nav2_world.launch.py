@@ -197,6 +197,16 @@ def generate_launch_description():
             )
         last_spawn = spawn_entity
 
+# Launch centralized GoalManager in global namespace
+    manager = Node(
+        package='turtlebot3_multi_robot',
+        executable='manager',
+        name='manager',
+        output='screen'
+    )
+    ld.add_action(manager)
+
+
     # After all robots spawned, start RViz, drive, and movement logic per robot
     last_spawn_event = last_spawn
     for robot in robots:
@@ -233,6 +243,7 @@ def generate_launch_description():
             namespace=[ns], output='screen',
             condition=IfCondition(LaunchConfiguration('enable_drive'))
         )
+
         movement = Node(
             package='issy', executable='movementlogic',
             namespace=[ns], output='screen'

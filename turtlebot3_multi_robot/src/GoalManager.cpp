@@ -70,6 +70,11 @@ goal_pose.pose.position.x, goal_pose.pose.position.y);
 }
 
 void GoalManager::update() {
+
+  for (const auto& [ns, busy] : robot_busy_) {
+    RCLCPP_INFO(this->get_logger(), "[Manager] Robot '%s' busy state: %s", ns.c_str(), busy ? "true" : "false");
+}
+
     if (!has_global_goals()) return;
   
     const auto& next_goal = global_goal_queue_.front();

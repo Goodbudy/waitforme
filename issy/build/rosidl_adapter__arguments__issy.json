@@ -1,7 +1,0 @@
-{
-  "package_name": "issy",
-  "non_idl_tuples": [
-    "/home/andrew/ros2_ws/src/waitforme/issy:srv/AddGoal.srv",
-    "/home/andrew/ros2_ws/src/waitforme/issy:srv/ExecuteGoals.srv"
-  ]
-}
