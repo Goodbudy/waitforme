@@ -63,8 +63,8 @@ CMAKE_BINARY_DIR = /home/andrew/ros2_ws/src/waitforme/andy/build
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: CMakeFiles/path_planner.dir/all
 all: CMakeFiles/astar_planner.dir/all
+all: CMakeFiles/path_planner.dir/all
 .PHONY : all
 
 # The main recursive "preinstall" target.
@@ -74,8 +74,8 @@ preinstall:
 # The main recursive "clean" target.
 clean: CMakeFiles/uninstall.dir/clean
 clean: CMakeFiles/andy_uninstall.dir/clean
-clean: CMakeFiles/path_planner.dir/clean
 clean: CMakeFiles/astar_planner.dir/clean
+clean: CMakeFiles/path_planner.dir/clean
 .PHONY : clean
 
 #=============================================================================
@@ -131,32 +131,6 @@ CMakeFiles/andy_uninstall.dir/clean:
 .PHONY : CMakeFiles/andy_uninstall.dir/clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/path_planner.dir
-
-# All Build rule for target.
-CMakeFiles/path_planner.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/path_planner.dir/build.make CMakeFiles/path_planner.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/path_planner.dir/build.make CMakeFiles/path_planner.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/andrew/ros2_ws/src/waitforme/andy/build/CMakeFiles --progress-num=3,4 "Built target path_planner"
-.PHONY : CMakeFiles/path_planner.dir/all
-
-# Build rule for subdir invocation for target.
-CMakeFiles/path_planner.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/andrew/ros2_ws/src/waitforme/andy/build/CMakeFiles 2
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/path_planner.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/andrew/ros2_ws/src/waitforme/andy/build/CMakeFiles 0
-.PHONY : CMakeFiles/path_planner.dir/rule
-
-# Convenience name for target.
-path_planner: CMakeFiles/path_planner.dir/rule
-.PHONY : path_planner
-
-# clean rule for target.
-CMakeFiles/path_planner.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/path_planner.dir/build.make CMakeFiles/path_planner.dir/clean
-.PHONY : CMakeFiles/path_planner.dir/clean
-
-#=============================================================================
 # Target rules for target CMakeFiles/astar_planner.dir
 
 # All Build rule for target.
@@ -181,6 +155,32 @@ astar_planner: CMakeFiles/astar_planner.dir/rule
 CMakeFiles/astar_planner.dir/clean:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/astar_planner.dir/build.make CMakeFiles/astar_planner.dir/clean
 .PHONY : CMakeFiles/astar_planner.dir/clean
+
+#=============================================================================
+# Target rules for target CMakeFiles/path_planner.dir
+
+# All Build rule for target.
+CMakeFiles/path_planner.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/path_planner.dir/build.make CMakeFiles/path_planner.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/path_planner.dir/build.make CMakeFiles/path_planner.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/andrew/ros2_ws/src/waitforme/andy/build/CMakeFiles --progress-num=3,4 "Built target path_planner"
+.PHONY : CMakeFiles/path_planner.dir/all
+
+# Build rule for subdir invocation for target.
+CMakeFiles/path_planner.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/andrew/ros2_ws/src/waitforme/andy/build/CMakeFiles 2
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/path_planner.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/andrew/ros2_ws/src/waitforme/andy/build/CMakeFiles 0
+.PHONY : CMakeFiles/path_planner.dir/rule
+
+# Convenience name for target.
+path_planner: CMakeFiles/path_planner.dir/rule
+.PHONY : path_planner
+
+# clean rule for target.
+CMakeFiles/path_planner.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/path_planner.dir/build.make CMakeFiles/path_planner.dir/clean
+.PHONY : CMakeFiles/path_planner.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

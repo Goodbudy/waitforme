@@ -198,19 +198,6 @@ andy_uninstall/fast:
 .PHONY : andy_uninstall/fast
 
 #=============================================================================
-# Target rules for targets named path_planner
-
-# Build rule for target.
-path_planner: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 path_planner
-.PHONY : path_planner
-
-# fast build rule for target.
-path_planner/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/path_planner.dir/build.make CMakeFiles/path_planner.dir/build
-.PHONY : path_planner/fast
-
-#=============================================================================
 # Target rules for targets named astar_planner
 
 # Build rule for target.
@@ -222,6 +209,19 @@ astar_planner: cmake_check_build_system
 astar_planner/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/astar_planner.dir/build.make CMakeFiles/astar_planner.dir/build
 .PHONY : astar_planner/fast
+
+#=============================================================================
+# Target rules for targets named path_planner
+
+# Build rule for target.
+path_planner: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 path_planner
+.PHONY : path_planner
+
+# fast build rule for target.
+path_planner/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/path_planner.dir/build.make CMakeFiles/path_planner.dir/build
+.PHONY : path_planner/fast
 
 src/astar_planner.o: src/astar_planner.cpp.o
 .PHONY : src/astar_planner.o

@@ -190,10 +190,10 @@ void AstarPlanner::goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr
 
     // 1) A* search on grid:
     // apply the buffer in m
-    // pretend object is there
-    // newObject(2,2.4,3);
-    // obstacle_buffer_radius_ = 0.2;
-    // applyObstacleBuffering(obstacle_buffer_radius_);
+    // pretend object is theregrid_
+    //newObject(2,2.4,3);
+    obstacle_buffer_radius_ = 0.05;
+    applyObstacleBuffering(obstacle_buffer_radius_);
     auto grid_path = aStarSearch(current_x_, current_y_, gx, gy);
 
     // 2) Save occupancy + path to PNG:
@@ -294,7 +294,7 @@ void AstarPlanner::saveGridAsImage(const std::vector<std::vector<int>> &grid, co
     for (const auto &point : path)
     {
         // RCLCPP_INFO(this->get_logger(), "Path point x: %d, Path point y: %d", point->x, point->y);
-        image.at<cv::Vec3b>(point->y, point->x) = cv::Vec3b(0, 0, 255); // Red (BGR format)ew
+        image.at<cv::Vec3b>(point->x, point->y) = cv::Vec3b(0, 0, 255); // Red (BGR format)ew
     }
 
     RCLCPP_INFO(this->get_logger(), "image saved");
@@ -302,7 +302,7 @@ void AstarPlanner::saveGridAsImage(const std::vector<std::vector<int>> &grid, co
     cv::Mat rotated;
     cv::Mat flip;
     cv::flip(image, flip, 0); // flip vertically to match map coordinates
-    cv::rotate(flip, rotated, cv::ROTATE_90_COUNTERCLOCKWISE);
+    cv::rotate(flip, rotated, cv::ROTATE_90_CLOCKWISE);
     cv::imwrite(filePath, rotated);
 }
 
@@ -384,7 +384,7 @@ void AstarPlanner::applyObstacleBuffering(double buffer)
 
     RCLCPP_INFO(this->get_logger(), "Buffering");
     RCLCPP_INFO(this->get_logger(), "Buffer size in cells: %d", buffer_size);
-    RCLCPP_INFO(this->get_logger(), "Original grid cell (10,10) = %d", original_grid_[10][10]);
+    //RCLCPP_INFO(this->get_logger(), "Original grid cell (10,10) = %d", original_grid_[10][10]);
 
     int total_obstacles = 0;
     for (int y = 0; y < grid.size(); ++y)
