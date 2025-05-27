@@ -835,3 +835,60 @@ int main(int argc, char **argv)
     rclcpp::shutdown();
     return 0;
 }
+
+////////
+
+//testing w/ tf2
+/*
+ObjDetect::ObjDetect() : Node("detection_node"), firstCent(true), ct_(0), 
+    tf_buffer_(this->get_clock()), tf_listener_(tf_buffer_)
+{
+    // Adjust QoS for the scan subscription
+    rclcpp::QoS qos_profile{rclcpp::SensorDataQoS()};
+    qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT); // or RELIABLE
+
+    scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
+        "/scan", qos_profile, std::bind(&ObjDetect::scanCallback, this, std::placeholders::_1));
+
+    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+        "/odom", 10, std::bind(&ObjDetect::odomCallback, this, std::placeholders::_1));
+
+    marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+        "/visualization_marker", 10);
+}
+*/
+/*
+//testing w/ tf2 :transform between frames
+geometry_msgs::msg::Point ObjDetect::transformPoint(const geometry_msgs::msg::Point &input_point, 
+    const std::string &from_frame, 
+    const std::string &to_frame)
+{
+    geometry_msgs::msg::PointStamped input_point_stamped;
+    input_point_stamped.header.frame_id = from_frame;
+    input_point_stamped.header.stamp = this->get_clock()->now();
+    input_point_stamped.point = input_point;
+
+    geometry_msgs::msg::PointStamped output_point_stamped;
+
+    // Define timeout as tf2::Duration
+    tf2::Duration timeout = tf2::durationFromSec(0.1);
+
+    try
+        {
+        output_point_stamped = tf_buffer_.transform(
+        input_point_stamped, 
+        to_frame, 
+        tf2::TimePointZero,   // Use TimePointZero for the latest available transform
+        from_frame, 
+        timeout
+        );
+        }
+    catch (tf2::TransformException &ex)
+        {
+        RCLCPP_WARN(this->get_logger(), "Could not transform %s to %s: %s", from_frame.c_str(), to_frame.c_str(), ex.what());
+        }
+
+    return output_point_stamped.point;
+}
+
+*/
