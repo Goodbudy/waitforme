@@ -77,11 +77,11 @@ def generate_launch_description():
                 namespace=ns,
                 output='screen',
                 parameters=[{
-                    'map_yaml_path': os.path.join(
+                    'map_yaml': os.path.join(
                         get_package_share_directory('turtlebot3_multi_robot'),
                         'worlds', 'GalleryMapHD.yaml'
                     ),
-                    'use_sim_time': True
+                    'use_sim_time': use_sim_time
                 }]
                 # remappings=[
                 #     ('tf', 'tf'),

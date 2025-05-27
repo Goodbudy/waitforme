@@ -409,20 +409,22 @@
 #include <yaml-cpp/yaml.h>
 #include <opencv2/opencv.hpp>
 
-ObjDetect::ObjDetect() : Node("detection_node"), firstCent(true), ct_(0)
+ObjDetect::ObjDetect() : Node("detection_node", rclcpp::NodeOptions().automatically_declare_parameters_from_overrides(true)), firstCent(true), ct_(0)
 {
+    RCLCPP_INFO(this->get_logger(), "ENTER CONSTRUCTOR");
+
     rclcpp::QoS qos_profile{rclcpp::SensorDataQoS()};
     qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
 
     std::string yaml_file;
-    if (this->get_parameter("map_yaml_path", yaml_file))
+    if (this->get_parameter("map_yaml", yaml_file))
     {
-        RCLCPP_INFO(this->get_logger(), "map_yaml_path param = %s", yaml_file.c_str());
+        RCLCPP_INFO(this->get_logger(), "map_yaml param = %s", yaml_file.c_str());
         loadMapFromFile(yaml_file);
     }
     else
     {
-        RCLCPP_ERROR(this->get_logger(), "No map_yaml_path provided.");
+        RCLCPP_ERROR(this->get_logger(), "No map_yaml provided.");
     }
 
     scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
@@ -433,11 +435,12 @@ ObjDetect::ObjDetect() : Node("detection_node"), firstCent(true), ct_(0)
 
     marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
         "visualization_marker", 10);
+    RCLCPP_INFO(this->get_logger(), "END CONSTRUCTOR");
 }
 
 void ObjDetect::loadMapFromFile(const std::string &yaml_file)
 {
-    RCLCPP_INFO(this->get_logger(), "🗌️ Loading static map from file: %s", yaml_file.c_str());
+    RCLCPP_INFO(this->get_logger(), "Loading static map from file: %s", yaml_file.c_str());
 
     YAML::Node config = YAML::LoadFile(yaml_file);
     std::string image_file = config["image"].as<std::string>();
@@ -455,7 +458,7 @@ void ObjDetect::loadMapFromFile(const std::string &yaml_file)
     cv::Mat image = cv::imread(image_file, cv::IMREAD_UNCHANGED);
     if (image.empty())
     {
-        RCLCPP_ERROR(this->get_logger(), "❌ Failed to load map image: %s", image_file.c_str());
+        RCLCPP_ERROR(this->get_logger(), "Failed to load map image: %s", image_file.c_str());
         return;
     }
 
@@ -475,7 +478,7 @@ void ObjDetect::loadMapFromFile(const std::string &yaml_file)
     }
 
     map_loaded_ = true;
-    RCLCPP_INFO(this->get_logger(), "✅ Static map loaded (%dx%d)", width_, height_);
+    RCLCPP_INFO(this->get_logger(), "Static map loaded (%dx%d)", width_, height_);
 }
 
 void ObjDetect::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
@@ -553,6 +556,8 @@ void ObjDetect::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 
 int main(int argc, char **argv)
 {
+    RCLCPP_ERROR(rclcpp::get_logger("detection_node"), "🚀 detection_node main() started");
+
     rclcpp::init(argc, argv);
     auto node = std::make_shared<ObjDetect>();
     rclcpp::spin(node);
