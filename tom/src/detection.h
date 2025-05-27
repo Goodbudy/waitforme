@@ -45,7 +45,8 @@ private:
     std::vector<std::vector<geometry_msgs::msg::Point>> countSegments(const sensor_msgs::msg::LaserScan::SharedPtr scan);
     void detectCylinder(const std::vector<geometry_msgs::msg::Point> &segment);
     void detectSquare(const std::vector<geometry_msgs::msg::Point> &segment);
-
+    void UnknownOBJ(const std::vector<geometry_msgs::msg::Point> &segment);
+    
     // Geometry and transformations
     geometry_msgs::msg::Point findCentre(geometry_msgs::msg::Point P1, geometry_msgs::msg::Point P2, double r);
     bool checkExisting(geometry_msgs::msg::Point centre);
