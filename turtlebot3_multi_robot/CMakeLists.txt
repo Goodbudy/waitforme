@@ -20,33 +20,6 @@ find_package(rclcpp_action REQUIRED)
 find_package(issy REQUIRED)
 
 # Add executables
-add_executable(Utest_single_goal_distribution
-  src/Utest_single_goal_distribution.cpp
-  src/TurtleBot.cpp
-  src/GoalManager.cpp
-)
-ament_target_dependencies(Utest_single_goal_distribution
-  rclcpp std_msgs geometry_msgs nav_msgs nav2_msgs rclcpp_action issy
-)
-
-add_executable(Utest_goal_reassignment
-  src/Utest_goal_reassignment.cpp
-  src/TurtleBot.cpp
-  src/GoalManager.cpp
-)
-ament_target_dependencies(Utest_goal_reassignment
-  rclcpp std_msgs geometry_msgs nav_msgs nav2_msgs rclcpp_action issy
-)
-
-add_executable(Utest_optimized_goal_assignment
-  src/Utest_optimized_goal_assignment.cpp
-  src/TurtleBot.cpp
-  src/GoalManager.cpp
-)
-ament_target_dependencies(Utest_optimized_goal_assignment
-  rclcpp std_msgs geometry_msgs nav_msgs nav2_msgs rclcpp_action issy
-)
-
 add_executable(manager
   src/managermain.cpp
   src/GoalManager.cpp
@@ -56,9 +29,6 @@ ament_target_dependencies(manager rclcpp std_msgs geometry_msgs nav_msgs nav2_ms
 # Install executables
 install(TARGETS
   manager
-  Utest_single_goal_distribution
-  Utest_goal_reassignment
-  Utest_optimized_goal_assignment
   DESTINATION lib/${PROJECT_NAME}
 )
 
