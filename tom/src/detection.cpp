@@ -1,5 +1,402 @@
+// #include "detection.h"
+// #include <cmath>
+// #include <utility>
+// #include <tf2/utils.h>
+// #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+// #include <std_msgs/msg/color_rgba.hpp>
+// #include <nav_msgs/msg/occupancy_grid.hpp>
+
+// /*
+// ObjDetect::ObjDetect() : Node("detection_node"), firstCent(true), ct_(0)
+// {
+//     // Adjust QoS for the scan subscription
+//     rclcpp::QoS qos_profile{rclcpp::SensorDataQoS()};
+//     qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT); // or RELIABLE
+
+//     scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
+//         "/scan", qos_profile, std::bind(&ObjDetect::scanCallback, this, std::placeholders::_1));
+
+//     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+//         "/odom", 10, std::bind(&ObjDetect::odomCallback, this, std::placeholders::_1));
+
+//     marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+//         "/visualization_marker", 10);
+// }
+// */
+// //testing w/ tf2
+// ObjDetect::ObjDetect() : Node("detection_node"), firstCent(true), ct_(0), 
+//     tf_buffer_(this->get_clock()), tf_listener_(tf_buffer_)
+// {
+//     // Adjust QoS for the scan subscription
+//     rclcpp::QoS qos_profile{rclcpp::SensorDataQoS()};
+//     qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT); // or RELIABLE
+
+//     scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
+//         "/scan", qos_profile, std::bind(&ObjDetect::scanCallback, this, std::placeholders::_1));
+
+//     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+//         "/odom", 10, std::bind(&ObjDetect::odomCallback, this, std::placeholders::_1));
+
+//     marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+//         "/visualization_marker", 10);
+// }
+
+// //testing w/ tf2 :transform between frames
+// geometry_msgs::msg::Point ObjDetect::transformPoint(const geometry_msgs::msg::Point &input_point, 
+//     const std::string &from_frame, 
+//     const std::string &to_frame)
+// {
+//     geometry_msgs::msg::PointStamped input_point_stamped;
+//     input_point_stamped.header.frame_id = from_frame;
+//     input_point_stamped.header.stamp = this->get_clock()->now();
+//     input_point_stamped.point = input_point;
+
+//     geometry_msgs::msg::PointStamped output_point_stamped;
+
+//     // Define timeout as tf2::Duration
+//     tf2::Duration timeout = tf2::durationFromSec(0.1);
+
+//     try
+//         {
+//         output_point_stamped = tf_buffer_.transform(
+//         input_point_stamped, 
+//         to_frame, 
+//         tf2::TimePointZero,   // Use TimePointZero for the latest available transform
+//         from_frame, 
+//         timeout
+//         );
+//         }
+//     catch (tf2::TransformException &ex)
+//         {
+//         RCLCPP_WARN(this->get_logger(), "Could not transform %s to %s: %s", from_frame.c_str(), to_frame.c_str(), ex.what());
+//         }
+
+//     return output_point_stamped.point;
+// }
 
 
+
+// void ObjDetect::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan)
+// {
+//     auto segments = countSegments(scan);
+// }
+
+// void ObjDetect::odomCallback(const nav_msgs::msg::Odometry::SharedPtr odom)
+// {
+//     currentOdom = *odom;
+// }
+
+// std::vector<std::vector<geometry_msgs::msg::Point>> ObjDetect::countSegments(const sensor_msgs::msg::LaserScan::SharedPtr scan)
+// {
+//     geometry_msgs::msg::Point current, previous;
+//     std::vector<std::vector<geometry_msgs::msg::Point>> segmentVector;
+//     std::vector<geometry_msgs::msg::Point> currentSegment;
+//     bool segStarted = false;
+
+//     for (size_t i = 1; i < scan->ranges.size(); i++)
+//     {
+//         if (std::isinf(scan->ranges.at(i - 1)) || std::isnan(scan->ranges.at(i - 1)))
+//             continue;
+
+//         while (i < scan->ranges.size() && (!std::isnan(scan->ranges.at(i))) && (scan->ranges.at(i) < scan->range_max))
+//         {
+//             float previousAngle = scan->angle_min + scan->angle_increment * (i - 1);
+//             previous.x = scan->ranges.at(i - 1) * cos(previousAngle);
+//             previous.y = scan->ranges.at(i - 1) * sin(previousAngle);
+
+//             float currentAngle = scan->angle_min + scan->angle_increment * i;
+//             current.x = scan->ranges.at(i) * cos(currentAngle);
+//             current.y = scan->ranges.at(i) * sin(currentAngle);
+
+//             float dist = hypot((current.x - previous.x), (current.y - previous.y));
+
+//             if (dist < 0.075)
+//             {
+//                 if (!segStarted)
+//                 {
+//                     segStarted = true;
+//                     currentSegment.clear();
+//                 }
+//                 currentSegment.push_back(localToGlobal(currentOdom, current));
+//             }
+//             else
+//             {
+
+//                 break;
+//             }
+//             i++;
+//         }
+
+//         if (segStarted && !currentSegment.empty())
+//         {
+//             segmentVector.push_back(currentSegment);
+//             rclcpp::sleep_for(std::chrono::milliseconds(10));
+//             if (!isThisAWall(currentSegment)) {
+//                 if (!isThisACorner(currentSegment)) {
+//                     detectCylinder(currentSegment);
+//                 } else if (isThis90(currentSegment)) {
+//                     //std::cout << "90-degree corner detected" << std::endl;
+//                     detectSquare(currentSegment);
+//                 }
+//             }
+//             segStarted = false;
+//         }
+
+//     }
+
+//     return segmentVector;
+// }
+
+// void ObjDetect::detectCylinder(const std::vector<geometry_msgs::msg::Point> &segment)
+// {
+//     if (segment.size() >= 6 && !isThisACorner(segment))
+//     {
+//         const auto &p1 = segment.front();
+//         const auto &p2 = segment.at(segment.size() / 2);
+//         const auto &p3 = segment.back();
+
+//         double a = hypot(p2.x - p1.x, p2.y - p1.y);
+//         double b = hypot(p3.x - p2.x, p3.y - p2.y);
+//         double c = hypot(p3.x - p1.x, p3.y - p1.y);
+
+//         double cosTheta = (a * a + b * b - c * c) / (2 * a * b);
+//         double theta = acos(cosTheta);
+//         double R = c / (2 * fabs(sin(theta / 2)));
+
+//         double targetRadius = 0.15;
+//         double tolerance_ = 0.02;
+
+//         if (fabs(R - targetRadius) < tolerance_)
+//         {
+//             geometry_msgs::msg::Point centre = findCentre(p1, p3, targetRadius);
+            
+//             if (std::isnan(centre.x) || std::isnan(centre.y) || std::isnan(centre.z)) {
+//                 // RCLCPP_WARN(this->get_logger(), "Skipping marker: detected NaN in center coordinates.");
+//                 return;
+//             }
+
+//             // New: verify all points lie close to this radius
+//             bool allCloseToRadius = true;
+//             for (const auto &pt : segment)
+//             {
+//                 double dist = hypot(pt.x - centre.x, pt.y - centre.y);
+//                 if (fabs(dist - targetRadius) > tolerance_)
+//                 {
+//                     allCloseToRadius = false;
+//                     break;
+//                 }
+//             }
+
+//             if (allCloseToRadius && (!checkExisting(centre) || firstCent))
+//             {
+//                 firstCent = false;
+//                 centres.push_back(centre);
+//                 RCLCPP_INFO(this->get_logger(), "Circle with radius ~%.2fm detected. Center: x = %.2f, y = %.2f, z = %.2f", targetRadius, centre.x, centre.y, centre.z);
+//                 marker_pub_->publish(produceMarkerCylinder(centre, visualization_msgs::msg::Marker::CYLINDER, "black"));
+//             }
+//         }
+//     }
+// }
+
+
+
+// void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segment)
+// {
+//     // Get points from the segment
+//     const auto &p1 = segment.front();
+//     const auto &p2 = segment.at(segment.size() / 2);
+//     const auto &p3 = segment.back();
+
+//     // Compute side lengths
+//     double sideA = hypot(p2.x - p1.x, p2.y - p1.y);
+//     double sideB = hypot(p3.x - p2.x, p3.y - p2.y);
+
+//     double targetLength = 0.22;
+//     double tolerance = 0.05;
+
+//     if (isThis90(segment) &&
+//         fabs(sideA - targetLength) < tolerance &&
+//         fabs(sideB - targetLength) < tolerance)
+//     {
+//         geometry_msgs::msg::Point corner = p2;
+//         if (std::isnan(corner.x) || std::isnan(corner.y) || std::isnan(corner.z)) {
+//             // RCLCPP_WARN(this->get_logger(), "Skipping marker: detected NaN in square corner coordinates.");
+//             return;
+//         }
+        
+//         // Optional: check if corner is already known to avoid duplicates
+//         if (!checkExisting(corner) || firstCent)
+//         {
+//             firstCent = false;
+//             centres.push_back(corner);
+
+//             RCLCPP_INFO(this->get_logger(), "Square corner detected at x = %.2f, y = %.2f", corner.x, corner.y);
+
+//             // Reuse the cylinder marker for now with a different color or style
+//             auto marker = produceMarkerCylinder(corner, visualization_msgs::msg::Marker::CUBE, "red");
+//             marker_pub_->publish(marker);
+//         }
+//     }
+// }
+
+
+// geometry_msgs::msg::Point ObjDetect::findCentre(geometry_msgs::msg::Point P1, geometry_msgs::msg::Point P2, double r)
+// {
+//     geometry_msgs::msg::Point centre;
+//     double mx = (P1.x + P2.x) / 2.0;
+//     double my = (P1.y + P2.y) / 2.0;
+//     double d = hypot(P2.x - P1.x, P2.y - P1.y);
+//     double h = sqrt(r * r - (d / 2.0) * (d / 2.0));
+//     double dx = -(P2.y - P1.y) / d;
+//     double dy = (P2.x - P1.x) / d;
+
+//     double c1x = mx + h * dx;
+//     double c1y = my + h * dy;
+//     double c2x = mx - h * dx;
+//     double c2y = my - h * dy;
+
+//     double d2 = hypot(currentOdom.pose.pose.position.x - c1x, currentOdom.pose.pose.position.y - c1y);
+//     double d3 = hypot(currentOdom.pose.pose.position.x - c2x, currentOdom.pose.pose.position.y - c2y);
+
+//     if (d2 > d3)
+//         {
+//             centre.x = c1x;
+//             centre.y = c1y;
+//             centre.z = currentOdom.pose.pose.position.z;
+//         }
+//     else
+//         {
+//             centre.x = c2x;
+//             centre.y = c2y;
+//             centre.z = currentOdom.pose.pose.position.z;
+//         }
+//     return centre;
+// }
+
+// bool ObjDetect::checkExisting(geometry_msgs::msg::Point centre)
+// {
+//     duplicate_threshold_ = 0.4;
+//     for (const auto &existing_centre : centres)
+//     {
+//         if (hypot(centre.x - existing_centre.x, centre.y - existing_centre.y) < duplicate_threshold_)
+//             return true;
+//     }
+//     return false;
+// }
+
+// void ObjDetect::visualizeSegment(const std::vector<geometry_msgs::msg::Point> &segment)
+// {
+//     visualization_msgs::msg::Marker line_marker;
+//     line_marker.header.frame_id = "map";
+//     line_marker.header.stamp = this->get_clock()->now();
+//     line_marker.ns = "cylinder_markers";
+//     line_marker.id = ct_++;
+//     line_marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
+//     line_marker.action = visualization_msgs::msg::Marker::ADD;
+//     line_marker.scale.x = 0.05;
+//     line_marker.color.a = 0.8;
+//     line_marker.color.g = 1.0;
+
+//     for (const auto &point : segment)
+//         line_marker.points.push_back(point);
+
+//     marker_pub_->publish(line_marker);
+// }
+
+// visualization_msgs::msg::Marker ObjDetect::produceMarkerCylinder(geometry_msgs::msg::Point pt, int type, const std::string& colour)
+// {
+//     visualization_msgs::msg::Marker marker;
+//     marker.header.frame_id = "map";
+//     marker.header.stamp = this->get_clock()->now();
+//     marker.ns = "cylinder_markers";
+//     marker.id = ct_++;
+//     marker.type = type;
+//     marker.action = visualization_msgs::msg::Marker::ADD;
+//     marker.pose.position = pt;
+//     marker.pose.orientation.w = 1.0;
+//     marker.scale.x = 0.3;
+//     marker.scale.y = 0.3;
+//     marker.scale.z = 0.2;
+//     marker.color.a = 1.0;
+//     if (colour == "black") {
+//         marker.color.r = 0.0;
+//         marker.color.g = 0.0;
+//         marker.color.b = 0.0;
+//     } else if (colour == "red") {
+//         marker.color.r = 1.0;
+//         marker.color.g = 0.0;
+//         marker.color.b = 0.0;
+//     } else if (colour == "green") {
+//         marker.color.r = 0.0;
+//         marker.color.g = 1.0;
+//         marker.color.b = 0.0;
+//     } else {
+//         // Default to black if unrecognized
+//         marker.color.r = 0.0;
+//         marker.color.g = 0.0;
+//         marker.color.b = 0.0;
+//     }
+//     return marker;
+// }
+
+// /*
+// geometry_msgs::msg::Point ObjDetect::localToGlobal(const nav_msgs::msg::Odometry &global, const geometry_msgs::msg::Point &local)
+// {
+//     geometry_msgs::msg::Point pt;
+//     double yaw = tf2::getYaw(global.pose.pose.orientation);
+//     pt.x = global.pose.pose.position.x + (local.x * cos(yaw) - local.y * sin(yaw));
+//     pt.y = global.pose.pose.position.y + (local.x * sin(yaw) + local.y * cos(yaw));
+//     pt.z = 0;
+//     return pt;
+// }
+// */
+// //Testing w/ tf2: updated L2G
+// geometry_msgs::msg::Point ObjDetect::localToGlobal(const nav_msgs::msg::Odometry &global, 
+//     const geometry_msgs::msg::Point &local)
+// {
+// return transformPoint(local, "odom", "map");
+// }
+
+// bool ObjDetect::isThisAWall(const std::vector<geometry_msgs::msg::Point> &segment)
+// {
+//     return hypot(segment.front().x - segment.back().x, segment.front().y - segment.back().y) > 0.6;
+// }
+
+// bool ObjDetect::isThisACorner(const std::vector<geometry_msgs::msg::Point> &segment)
+// {
+//     float a = hypot(segment.back().x - segment[segment.size() / 2].x, segment.back().y - segment[segment.size() / 2].y);
+//     float b = hypot(segment.front().x - segment[segment.size() / 2].x, segment.front().y - segment[segment.size() / 2].y);
+//     float c = hypot(segment.back().x - segment.front().x, segment.back().y - segment.front().y);
+//     float cosTheta = (a * a + b * b - c * c) / (2 * a * b);
+//     float theta = acos(cosTheta) * 180 / M_PI;
+
+//     return theta < 120;
+// }
+
+// bool ObjDetect::isThis90(const std::vector<geometry_msgs::msg::Point> &segment)
+// {
+//     if (segment.size() < 12){
+//         //std::cout << "Fail" << std::endl;
+//         return false;
+//     }
+
+//     float a = hypot(segment.back().x - segment[segment.size() / 2].x, segment.back().y - segment[segment.size() / 2].y);
+//     float b = hypot(segment.front().x - segment[segment.size() / 2].x, segment.front().y - segment[segment.size() / 2].y);
+//     float c = hypot(segment.back().x - segment.front().x, segment.back().y - segment.front().y);
+//     float cosTheta = (a * a + b * b - c * c) / (2 * a * b);
+//     float theta = acos(cosTheta) * 180 / M_PI;
+
+//     return (theta > 85.0 && theta < 95.0);
+// }
+
+
+// int main(int argc, char **argv)
+// {
+//     rclcpp::init(argc, argv);
+//     rclcpp::spin(std::make_shared<ObjDetect>());
+//     rclcpp::shutdown();
+//     return 0;
+// }
 
 #include "detection.h"
 #include <cmath>
@@ -8,395 +405,157 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include <std_msgs/msg/color_rgba.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
+#include <visualization_msgs/msg/marker.hpp>
+#include <yaml-cpp/yaml.h>
+#include <opencv2/opencv.hpp>
 
-/*
 ObjDetect::ObjDetect() : Node("detection_node"), firstCent(true), ct_(0)
 {
-    // Adjust QoS for the scan subscription
     rclcpp::QoS qos_profile{rclcpp::SensorDataQoS()};
-    qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT); // or RELIABLE
+    qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
 
-    scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-        "/scan", qos_profile, std::bind(&ObjDetect::scanCallback, this, std::placeholders::_1));
-
-    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-        "/odom", 10, std::bind(&ObjDetect::odomCallback, this, std::placeholders::_1));
-
-    marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
-        "/visualization_marker", 10);
-}
-*/
-//testing w/ tf2
-ObjDetect::ObjDetect() : Node("detection_node"), firstCent(true), ct_(0), 
-    tf_buffer_(this->get_clock()), tf_listener_(tf_buffer_)
-{
-    // Adjust QoS for the scan subscription
-    rclcpp::QoS qos_profile{rclcpp::SensorDataQoS()};
-    qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT); // or RELIABLE
-
-    scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
-        "/scan", qos_profile, std::bind(&ObjDetect::scanCallback, this, std::placeholders::_1));
-
-    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-        "/odom", 10, std::bind(&ObjDetect::odomCallback, this, std::placeholders::_1));
-
-    marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
-        "/visualization_marker", 10);
-}
-
-//testing w/ tf2 :transform between frames
-geometry_msgs::msg::Point ObjDetect::transformPoint(const geometry_msgs::msg::Point &input_point, 
-    const std::string &from_frame, 
-    const std::string &to_frame)
-{
-    geometry_msgs::msg::PointStamped input_point_stamped;
-    input_point_stamped.header.frame_id = from_frame;
-    input_point_stamped.header.stamp = this->get_clock()->now();
-    input_point_stamped.point = input_point;
-
-    geometry_msgs::msg::PointStamped output_point_stamped;
-
-    // Define timeout as tf2::Duration
-    tf2::Duration timeout = tf2::durationFromSec(0.1);
-
-    try
-        {
-        output_point_stamped = tf_buffer_.transform(
-        input_point_stamped, 
-        to_frame, 
-        tf2::TimePointZero,   // Use TimePointZero for the latest available transform
-        from_frame, 
-        timeout
-        );
-        }
-    catch (tf2::TransformException &ex)
-        {
-        RCLCPP_WARN(this->get_logger(), "Could not transform %s to %s: %s", from_frame.c_str(), to_frame.c_str(), ex.what());
-        }
-
-    return output_point_stamped.point;
-}
-
-
-
-void ObjDetect::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan)
-{
-    auto segments = countSegments(scan);
-}
-
-void ObjDetect::odomCallback(const nav_msgs::msg::Odometry::SharedPtr odom)
-{
-    currentOdom = *odom;
-}
-
-std::vector<std::vector<geometry_msgs::msg::Point>> ObjDetect::countSegments(const sensor_msgs::msg::LaserScan::SharedPtr scan)
-{
-    geometry_msgs::msg::Point current, previous;
-    std::vector<std::vector<geometry_msgs::msg::Point>> segmentVector;
-    std::vector<geometry_msgs::msg::Point> currentSegment;
-    bool segStarted = false;
-
-    for (size_t i = 1; i < scan->ranges.size(); i++)
+    std::string yaml_file;
+    if (this->get_parameter("map_yaml_path", yaml_file))
     {
-        if (std::isinf(scan->ranges.at(i - 1)) || std::isnan(scan->ranges.at(i - 1)))
+        RCLCPP_INFO(this->get_logger(), "map_yaml_path param = %s", yaml_file.c_str());
+        loadMapFromFile(yaml_file);
+    }
+    else
+    {
+        RCLCPP_ERROR(this->get_logger(), "No map_yaml_path provided.");
+    }
+
+    scan_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
+        "scan", qos_profile, std::bind(&ObjDetect::scanCallback, this, std::placeholders::_1));
+
+    odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+        "odom", 10, std::bind(&ObjDetect::odomCallback, this, std::placeholders::_1));
+
+    marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
+        "visualization_marker", 10);
+}
+
+void ObjDetect::loadMapFromFile(const std::string &yaml_file)
+{
+    RCLCPP_INFO(this->get_logger(), "🗌️ Loading static map from file: %s", yaml_file.c_str());
+
+    YAML::Node config = YAML::LoadFile(yaml_file);
+    std::string image_file = config["image"].as<std::string>();
+
+    if (image_file[0] != '/')
+    {
+        auto yaml_dir = rcpputils::fs::path(yaml_file).parent_path();
+        image_file = (yaml_dir / image_file).string();
+    }
+
+    resolution_ = config["resolution"].as<double>();
+    origin_x_ = config["origin"][0].as<double>();
+    origin_y_ = config["origin"][1].as<double>();
+
+    cv::Mat image = cv::imread(image_file, cv::IMREAD_UNCHANGED);
+    if (image.empty())
+    {
+        RCLCPP_ERROR(this->get_logger(), "❌ Failed to load map image: %s", image_file.c_str());
+        return;
+    }
+
+    cv::flip(image, image, 0);
+    width_ = image.cols;
+    height_ = image.rows;
+    grid_.resize(height_ * width_, 0);
+
+    for (int y = 0; y < height_; ++y)
+    {
+        for (int x = 0; x < width_; ++x)
+        {
+            uint8_t pixel = image.at<uchar>(y, x);
+            int idx = y * width_ + x;
+            grid_[idx] = (pixel == 0 || pixel == 205) ? 1 : 0;
+        }
+    }
+
+    map_loaded_ = true;
+    RCLCPP_INFO(this->get_logger(), "✅ Static map loaded (%dx%d)", width_, height_);
+}
+
+void ObjDetect::scanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
+{
+    std::vector<geometry_msgs::msg::Point> detected_points;
+
+    for (size_t i = 0; i < msg->ranges.size(); ++i)
+    {
+        float r = msg->ranges[i];
+        if (!std::isfinite(r) || r < msg->range_min || r > msg->range_max)
             continue;
 
-        while (i < scan->ranges.size() && (!std::isnan(scan->ranges.at(i))) && (scan->ranges.at(i) < scan->range_max))
+        float angle = msg->angle_min + i * msg->angle_increment;
+
+        geometry_msgs::msg::Point pt_local;
+        pt_local.x = r * std::cos(angle);
+        pt_local.y = r * std::sin(angle);
+        pt_local.z = 0.0;
+
+        geometry_msgs::msg::Point pt_map;
+        double yaw = tf2::getYaw(current_pose_.orientation);
+        pt_map.x = current_pose_.position.x + (pt_local.x * std::cos(yaw) - pt_local.y * std::sin(yaw));
+        pt_map.y = current_pose_.position.y + (pt_local.x * std::sin(yaw) + pt_local.y * std::cos(yaw));
+        pt_map.z = 0.0;
+
+        int mx = static_cast<int>((pt_map.x - origin_x_) / resolution_);
+        int my = static_cast<int>((pt_map.y - origin_y_) / resolution_);
+        int idx = my * width_ + mx;
+
+        if (mx >= 0 && mx < width_ && my >= 0 && my < height_ && idx >= 0 && idx < static_cast<int>(grid_.size()))
         {
-            float previousAngle = scan->angle_min + scan->angle_increment * (i - 1);
-            previous.x = scan->ranges.at(i - 1) * cos(previousAngle);
-            previous.y = scan->ranges.at(i - 1) * sin(previousAngle);
-
-            float currentAngle = scan->angle_min + scan->angle_increment * i;
-            current.x = scan->ranges.at(i) * cos(currentAngle);
-            current.y = scan->ranges.at(i) * sin(currentAngle);
-
-            float dist = hypot((current.x - previous.x), (current.y - previous.y));
-
-            if (dist < 0.075)
+            if (grid_[idx] == 0)
             {
-                if (!segStarted)
-                {
-                    segStarted = true;
-                    currentSegment.clear();
-                }
-                currentSegment.push_back(localToGlobal(currentOdom, current));
+                detected_points.push_back(pt_map);
             }
-            else
-            {
-
-                break;
-            }
-            i++;
         }
-
-        if (segStarted && !currentSegment.empty())
-        {
-            segmentVector.push_back(currentSegment);
-            rclcpp::sleep_for(std::chrono::milliseconds(10));
-            if (!isThisAWall(currentSegment)) {
-                if (!isThisACorner(currentSegment)) {
-                    detectCylinder(currentSegment);
-                } else if (isThis90(currentSegment)) {
-                    //std::cout << "90-degree corner detected" << std::endl;
-                    detectSquare(currentSegment);
-                }
-            }
-            segStarted = false;
-        }
-
     }
 
-    return segmentVector;
-}
-
-void ObjDetect::detectCylinder(const std::vector<geometry_msgs::msg::Point> &segment)
-{
-    if (segment.size() >= 6 && !isThisACorner(segment))
+    for (const auto& pt : detected_points)
     {
-        const auto &p1 = segment.front();
-        const auto &p2 = segment.at(segment.size() / 2);
-        const auto &p3 = segment.back();
-
-        double a = hypot(p2.x - p1.x, p2.y - p1.y);
-        double b = hypot(p3.x - p2.x, p3.y - p2.y);
-        double c = hypot(p3.x - p1.x, p3.y - p1.y);
-
-        double cosTheta = (a * a + b * b - c * c) / (2 * a * b);
-        double theta = acos(cosTheta);
-        double R = c / (2 * fabs(sin(theta / 2)));
-
-        double targetRadius = 0.15;
-        double tolerance_ = 0.02;
-
-        if (fabs(R - targetRadius) < tolerance_)
-        {
-            geometry_msgs::msg::Point centre = findCentre(p1, p3, targetRadius);
-            
-            if (std::isnan(centre.x) || std::isnan(centre.y) || std::isnan(centre.z)) {
-                // RCLCPP_WARN(this->get_logger(), "Skipping marker: detected NaN in center coordinates.");
-                return;
-            }
-
-            // New: verify all points lie close to this radius
-            bool allCloseToRadius = true;
-            for (const auto &pt : segment)
-            {
-                double dist = hypot(pt.x - centre.x, pt.y - centre.y);
-                if (fabs(dist - targetRadius) > tolerance_)
-                {
-                    allCloseToRadius = false;
-                    break;
-                }
-            }
-
-            if (allCloseToRadius && (!checkExisting(centre) || firstCent))
-            {
-                firstCent = false;
-                centres.push_back(centre);
-                RCLCPP_INFO(this->get_logger(), "Circle with radius ~%.2fm detected. Center: x = %.2f, y = %.2f, z = %.2f", targetRadius, centre.x, centre.y, centre.z);
-                marker_pub_->publish(produceMarkerCylinder(centre, visualization_msgs::msg::Marker::CYLINDER, "black"));
-            }
+        visualization_msgs::msg::Marker marker;
+        marker.header.frame_id = "/map";
+        marker.header.stamp = this->now();
+        marker.ns = "obstacles";
+        marker.id = ct_++;
+        marker.type = (detected_points.size() > 20) ? visualization_msgs::msg::Marker::CYLINDER : visualization_msgs::msg::Marker::CUBE;
+        marker.action = visualization_msgs::msg::Marker::ADD;
+        marker.pose.position = pt;
+        marker.pose.orientation.w = 1.0;
+        marker.scale.x = 0.3;
+        marker.scale.y = 0.3;
+        marker.scale.z = 0.2;
+        marker.color.a = 1.0;
+        if (marker.type == visualization_msgs::msg::Marker::CYLINDER) {
+            marker.color.r = 0.0f;
+            marker.color.g = 1.0f;
+            marker.color.b = 0.0f;
+        } else {
+            marker.color.r = 1.0f;
+            marker.color.g = 0.0f;
+            marker.color.b = 0.0f;
         }
+        marker.lifetime = rclcpp::Duration::from_seconds(1.0);
+
+        RCLCPP_INFO(this->get_logger(), "Publishing marker at (%.2f, %.2f)", pt.x, pt.y);
+
+        marker_pub_->publish(marker);
     }
 }
 
-
-
-void ObjDetect::detectSquare(const std::vector<geometry_msgs::msg::Point> &segment)
+void ObjDetect::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
-    // Get points from the segment
-    const auto &p1 = segment.front();
-    const auto &p2 = segment.at(segment.size() / 2);
-    const auto &p3 = segment.back();
-
-    // Compute side lengths
-    double sideA = hypot(p2.x - p1.x, p2.y - p1.y);
-    double sideB = hypot(p3.x - p2.x, p3.y - p2.y);
-
-    double targetLength = 0.22;
-    double tolerance = 0.05;
-
-    if (isThis90(segment) &&
-        fabs(sideA - targetLength) < tolerance &&
-        fabs(sideB - targetLength) < tolerance)
-    {
-        geometry_msgs::msg::Point corner = p2;
-        if (std::isnan(corner.x) || std::isnan(corner.y) || std::isnan(corner.z)) {
-            // RCLCPP_WARN(this->get_logger(), "Skipping marker: detected NaN in square corner coordinates.");
-            return;
-        }
-        
-        // Optional: check if corner is already known to avoid duplicates
-        if (!checkExisting(corner) || firstCent)
-        {
-            firstCent = false;
-            centres.push_back(corner);
-
-            RCLCPP_INFO(this->get_logger(), "Square corner detected at x = %.2f, y = %.2f", corner.x, corner.y);
-
-            // Reuse the cylinder marker for now with a different color or style
-            auto marker = produceMarkerCylinder(corner, visualization_msgs::msg::Marker::CUBE, "red");
-            marker_pub_->publish(marker);
-        }
-    }
+    current_pose_ = msg->pose.pose;
 }
-
-
-geometry_msgs::msg::Point ObjDetect::findCentre(geometry_msgs::msg::Point P1, geometry_msgs::msg::Point P2, double r)
-{
-    geometry_msgs::msg::Point centre;
-    double mx = (P1.x + P2.x) / 2.0;
-    double my = (P1.y + P2.y) / 2.0;
-    double d = hypot(P2.x - P1.x, P2.y - P1.y);
-    double h = sqrt(r * r - (d / 2.0) * (d / 2.0));
-    double dx = -(P2.y - P1.y) / d;
-    double dy = (P2.x - P1.x) / d;
-
-    double c1x = mx + h * dx;
-    double c1y = my + h * dy;
-    double c2x = mx - h * dx;
-    double c2y = my - h * dy;
-
-    double d2 = hypot(currentOdom.pose.pose.position.x - c1x, currentOdom.pose.pose.position.y - c1y);
-    double d3 = hypot(currentOdom.pose.pose.position.x - c2x, currentOdom.pose.pose.position.y - c2y);
-
-    if (d2 > d3)
-        {
-            centre.x = c1x;
-            centre.y = c1y;
-            centre.z = currentOdom.pose.pose.position.z;
-        }
-    else
-        {
-            centre.x = c2x;
-            centre.y = c2y;
-            centre.z = currentOdom.pose.pose.position.z;
-        }
-    return centre;
-}
-
-bool ObjDetect::checkExisting(geometry_msgs::msg::Point centre)
-{
-    duplicate_threshold_ = 0.4;
-    for (const auto &existing_centre : centres)
-    {
-        if (hypot(centre.x - existing_centre.x, centre.y - existing_centre.y) < duplicate_threshold_)
-            return true;
-    }
-    return false;
-}
-
-void ObjDetect::visualizeSegment(const std::vector<geometry_msgs::msg::Point> &segment)
-{
-    visualization_msgs::msg::Marker line_marker;
-    line_marker.header.frame_id = "map";
-    line_marker.header.stamp = this->get_clock()->now();
-    line_marker.ns = "cylinder_markers";
-    line_marker.id = ct_++;
-    line_marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
-    line_marker.action = visualization_msgs::msg::Marker::ADD;
-    line_marker.scale.x = 0.05;
-    line_marker.color.a = 0.8;
-    line_marker.color.g = 1.0;
-
-    for (const auto &point : segment)
-        line_marker.points.push_back(point);
-
-    marker_pub_->publish(line_marker);
-}
-
-visualization_msgs::msg::Marker ObjDetect::produceMarkerCylinder(geometry_msgs::msg::Point pt, int type, const std::string& colour)
-{
-    visualization_msgs::msg::Marker marker;
-    marker.header.frame_id = "map";
-    marker.header.stamp = this->get_clock()->now();
-    marker.ns = "cylinder_markers";
-    marker.id = ct_++;
-    marker.type = type;
-    marker.action = visualization_msgs::msg::Marker::ADD;
-    marker.pose.position = pt;
-    marker.pose.orientation.w = 1.0;
-    marker.scale.x = 0.3;
-    marker.scale.y = 0.3;
-    marker.scale.z = 0.2;
-    marker.color.a = 1.0;
-    if (colour == "black") {
-        marker.color.r = 0.0;
-        marker.color.g = 0.0;
-        marker.color.b = 0.0;
-    } else if (colour == "red") {
-        marker.color.r = 1.0;
-        marker.color.g = 0.0;
-        marker.color.b = 0.0;
-    } else if (colour == "green") {
-        marker.color.r = 0.0;
-        marker.color.g = 1.0;
-        marker.color.b = 0.0;
-    } else {
-        // Default to black if unrecognized
-        marker.color.r = 0.0;
-        marker.color.g = 0.0;
-        marker.color.b = 0.0;
-    }
-    return marker;
-}
-
-/*
-geometry_msgs::msg::Point ObjDetect::localToGlobal(const nav_msgs::msg::Odometry &global, const geometry_msgs::msg::Point &local)
-{
-    geometry_msgs::msg::Point pt;
-    double yaw = tf2::getYaw(global.pose.pose.orientation);
-    pt.x = global.pose.pose.position.x + (local.x * cos(yaw) - local.y * sin(yaw));
-    pt.y = global.pose.pose.position.y + (local.x * sin(yaw) + local.y * cos(yaw));
-    pt.z = 0;
-    return pt;
-}
-*/
-//Testing w/ tf2: updated L2G
-geometry_msgs::msg::Point ObjDetect::localToGlobal(const nav_msgs::msg::Odometry &global, 
-    const geometry_msgs::msg::Point &local)
-{
-return transformPoint(local, "odom", "map");
-}
-
-bool ObjDetect::isThisAWall(const std::vector<geometry_msgs::msg::Point> &segment)
-{
-    return hypot(segment.front().x - segment.back().x, segment.front().y - segment.back().y) > 0.6;
-}
-
-bool ObjDetect::isThisACorner(const std::vector<geometry_msgs::msg::Point> &segment)
-{
-    float a = hypot(segment.back().x - segment[segment.size() / 2].x, segment.back().y - segment[segment.size() / 2].y);
-    float b = hypot(segment.front().x - segment[segment.size() / 2].x, segment.front().y - segment[segment.size() / 2].y);
-    float c = hypot(segment.back().x - segment.front().x, segment.back().y - segment.front().y);
-    float cosTheta = (a * a + b * b - c * c) / (2 * a * b);
-    float theta = acos(cosTheta) * 180 / M_PI;
-
-    return theta < 120;
-}
-
-bool ObjDetect::isThis90(const std::vector<geometry_msgs::msg::Point> &segment)
-{
-    if (segment.size() < 12){
-        //std::cout << "Fail" << std::endl;
-        return false;
-    }
-
-    float a = hypot(segment.back().x - segment[segment.size() / 2].x, segment.back().y - segment[segment.size() / 2].y);
-    float b = hypot(segment.front().x - segment[segment.size() / 2].x, segment.front().y - segment[segment.size() / 2].y);
-    float c = hypot(segment.back().x - segment.front().x, segment.back().y - segment.front().y);
-    float cosTheta = (a * a + b * b - c * c) / (2 * a * b);
-    float theta = acos(cosTheta) * 180 / M_PI;
-
-    return (theta > 85.0 && theta < 95.0);
-}
-
 
 int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<ObjDetect>());
+    auto node = std::make_shared<ObjDetect>();
+    rclcpp::spin(node);
     rclcpp::shutdown();
     return 0;
 }

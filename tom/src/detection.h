@@ -18,6 +18,16 @@ public:
     ObjDetect();
 
 private:
+
+//////////////////////////////////hallie add//////////////////////////////////////////
+    double resolution_;
+    double origin_x_, origin_y_;
+    int width_, height_;
+    std::vector<int> grid_;  // 1 = obstacle, 0 = free
+    bool map_loaded_ = false;
+    void loadMapFromFile(const std::string& yaml_file);
+    geometry_msgs::msg::Pose current_pose_;
+//////////////////////////////////////////////////////////////////////
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scan_sub_;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
@@ -56,8 +66,8 @@ private:
     double duplicate_threshold_;
 
     //Testing w/tf2: TF2 buffer and listener
-    tf2_ros::Buffer tf_buffer_;
-    tf2_ros::TransformListener tf_listener_;
+    // tf2_ros::Buffer tf_buffer_;
+    // tf2_ros::TransformListener tf_listener_;
 
     //Testing w/ tf2: new function
     geometry_msgs::msg::Point transformPoint(const geometry_msgs::msg::Point &input_point, 

@@ -71,25 +71,25 @@ def generate_launch_description():
                     'use_sim_time': use_sim_time
                 }]
             ))
-        # detection_node = TimerAction(
-        #     period=space + 5 + i * 2,
-        #     actions=[Node(
-        #         package='tom',
-        #         executable='detection_node',
-        #         namespace=ns,
-        #         output='screen',
-        #         parameters=[{
-        #             'use_sim_time': True
-        #         }],
-        #         remappings=[
-        #             ('tf', 'tf'),
-        #             ('tf_static', 'tf_static'),
-        #             ('scan', f'{ns}/scan'),
-        #             ('odom', f'{ns}/odom')
-        #         ]
-        #     )]
-        # )
-        # ld.add_action(detection_node)
+        ld.add_action(Node(
+                package='tom',
+                executable='detection_node',
+                namespace=ns,
+                output='screen',
+                parameters=[{
+                    'map_yaml_path': os.path.join(
+                        get_package_share_directory('turtlebot3_multi_robot'),
+                        'worlds', 'GalleryMapHD.yaml'
+                    ),
+                    'use_sim_time': True
+                }]
+                # remappings=[
+                #     ('tf', 'tf'),
+                #     ('tf_static', 'tf_static'),
+                #     ('scan', f'{ns}/scan'),
+                #     ('odom', f'{ns}/odom')
+                # ]
+            ))
         
     # Gazebo server & client
     world_file = os.path.join(

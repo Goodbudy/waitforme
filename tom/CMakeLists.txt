@@ -15,6 +15,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 # Include the src directory
 include_directories(${CMAKE_SOURCE_DIR}/src)
@@ -34,13 +35,14 @@ ament_target_dependencies(kalman_filter_node rclcpp nav_msgs Eigen3)
 
 # Create an executable for the detection node
 add_executable(detection_node src/detection.cpp)
-ament_target_dependencies(detection_node rclcpp geometry_msgs nav2_msgs std_msgs OpenCV sensor_msgs nav_msgs tf2 tf2_ros tf2_geometry_msgs visualization_msgs)
+ament_target_dependencies(detection_node yaml-cpp rclcpp geometry_msgs nav2_msgs std_msgs OpenCV sensor_msgs nav_msgs tf2 tf2_ros tf2_geometry_msgs visualization_msgs)
 
 add_executable(people_detector src/people_detector.cpp)
 ament_target_dependencies(people_detector rclcpp sensor_msgs visualization_msgs cv_bridge OpenCV)
 
 # Link OpenCV for the detection node
-target_link_libraries(detection_node ${OpenCV_LIBS})
+target_link_libraries(detection_node yaml-cpp ${OpenCV_LIBS})
+
 
 # Install the executable for localisation node
 install(TARGETS localisation_node
