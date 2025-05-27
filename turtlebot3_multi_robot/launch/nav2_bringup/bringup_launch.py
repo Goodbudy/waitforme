@@ -87,7 +87,7 @@ def generate_launch_description():
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
     'map',
-    default_value=os.path.join(get_package_share_directory('turtlebot3_multi_robot'), 'worlds', 'GalleryMapHD.yaml'),
+    # default_value=os.path.join(get_package_share_directory('turtlebot3_multi_robot'), 'worlds', 'real_map4.yaml'),
     description='Full path to map yaml file to load')
 
     declare_map_server_cmd = DeclareLaunchArgument(

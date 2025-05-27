@@ -82,7 +82,7 @@ def generate_launch_description():
         executable='map_server',
         name='map_server',
         output='screen',
-        parameters=[{'yaml_filename': os.path.join(get_package_share_directory('turtlebot3_multi_robot'), 'worlds', 'realmap.yaml'), #'turtlebot3_navigation2'), 'map', 'map.yaml'),
+        parameters=[{'yaml_filename': os.path.join(get_package_share_directory('turtlebot3_multi_robot'), 'worlds', 'real_map4.yaml'), #'turtlebot3_navigation2'), 'map', 'map.yaml'),
                      },],
         remappings=remappings)
 
@@ -102,7 +102,7 @@ def generate_launch_description():
     last_action = None
     # Spawn turtlebot3 instances in gazebo
     for robot in robots:
-        namespace = [ '/' + robot['name'] ]
+        namespace = '/' + robot['name']
         bringup_cmd = IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     os.path.join(nav_launch_dir, 'bringup_launch.py')),
@@ -110,7 +110,7 @@ def generate_launch_description():
                                     'slam': 'False',
                                     'namespace': namespace,
                                     'use_namespace': 'True',
-                                    'map': '',
+                                    'map': os.path.join(get_package_share_directory('turtlebot3_multi_robot'), 'worlds', 'real_map4.yaml'),
                                     'map_server': 'False',
                                     'params_file': params_file,
                                     'default_bt_xml_filename': os.path.join(
@@ -122,22 +122,43 @@ def generate_launch_description():
         ld.add_action(bringup_cmd)
     ######################
 
+        # ld.add_action(Node(
+        #         package='andy', executable='astar_planner',
+        #         namespace=namespace,
+        #         output='screen',
+        #         parameters=[{
+        #             'map_yaml_path': os.path.join(
+        #                 get_package_share_directory('turtlebot3_multi_robot'),
+        #                 'worlds', 'real_map4.yaml'
+        #             ),
+        #             'use_sim_time': use_sim_time
+        #         }]
+        #     ))
+        
+    # manager = Node(
+    #     package='turtlebot3_multi_robot',
+    #     executable='manager',
+    #     name='manager',
+    #     output='screen'
+    # )
+    # ld.add_action(manager)
+
     # ######################
     # Start rviz nodes and drive nodes after the last robot is spawned
     for robot in robots:
 
-        namespace = [ '/' + robot['name'] ]
+        namespace = '/' + robot['name']
 
-        # Create a initial pose topic publish call
-        message = '{header: {frame_id: map}, pose: {pose: {position: {x: ' + \
-            robot['x_pose'] + ', y: ' + robot['y_pose'] + \
-            ', z: 0.1}, orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0000000}}, }}'
+        # # Create a initial pose topic publish call
+        # message = '{header: {frame_id: map}, pose: {pose: {position: {x: ' + \
+        #     robot['x_pose'] + ', y: ' + robot['y_pose'] + \
+        #     ', z: 0.1}, orientation: {x: 0.0, y: 0.0, z: 0.0, w: 1.0000000}}, }}'
 
-        initial_pose_cmd = ExecuteProcess(
-            cmd=['ros2', 'topic', 'pub', '-t', '3', '--qos-reliability', 'reliable', namespace + ['/initialpose'],
-                'geometry_msgs/PoseWithCovarianceStamped', message],
-            output='screen'
-        )
+        # initial_pose_cmd = ExecuteProcess(
+        #     cmd=['ros2', 'topic', 'pub', '-t', '3', '--qos-reliability', 'reliable', namespace + ['/initialpose'],
+        #         'geometry_msgs/PoseWithCovarianceStamped', message],
+        #     output='screen'
+        # )
 
         rviz_cmd = IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
@@ -149,8 +170,15 @@ def generate_launch_description():
                                    condition=IfCondition(enable_rviz)
                                     )
 
-        ld.add_action(initial_pose_cmd)
+        # ld.add_action(initial_pose_cmd)
         ld.add_action(rviz_cmd)
+
+        # movement = Node(
+        #     package='issy', executable='movementlogic',
+        #     namespace=[namespace], output='screen'
+        # )
+
+        # ld.add_action(movement)
 
     ######################
 
