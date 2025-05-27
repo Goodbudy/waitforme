@@ -207,7 +207,7 @@ void AstarPlanner::goalCallback(const geometry_msgs::msg::PoseStamped::SharedPtr
     // apply the buffer in m
     // pretend object is theregrid_
     // newObject(2,2.4,3);
-    obstacle_buffer_radius_ = 0.1;
+    obstacle_buffer_radius_ = 0.15;
     applyObstacleBuffering(obstacle_buffer_radius_);
     auto grid_path = aStarSearch(current_x_, current_y_, gx, gy);
 

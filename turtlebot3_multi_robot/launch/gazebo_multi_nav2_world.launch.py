@@ -71,25 +71,6 @@ def generate_launch_description():
                     'use_sim_time': use_sim_time
                 }]
             ))
-        ld.add_action(Node(
-                package='tom',
-                executable='detection_node',
-                namespace=ns,
-                output='screen',
-                parameters=[{
-                    'map_yaml': os.path.join(
-                        get_package_share_directory('turtlebot3_multi_robot'),
-                        'worlds', 'GalleryMapHD.yaml'
-                    ),
-                    'use_sim_time': use_sim_time
-                }]
-                # remappings=[
-                #     ('tf', 'tf'),
-                #     ('tf_static', 'tf_static'),
-                #     ('scan', f'{ns}/scan'),
-                #     ('odom', f'{ns}/odom')
-                # ]
-            ))
         
     # Gazebo server & client
     world_file = os.path.join(
@@ -249,9 +230,29 @@ def generate_launch_description():
             namespace=[ns], output='screen'
         )
 
+        detection = Node(
+                package='tom',
+                executable='detection_node',
+                namespace=ns,
+                output='screen',
+                parameters=[{
+                    'map_yaml': os.path.join(
+                        get_package_share_directory('turtlebot3_multi_robot'),
+                        'worlds', 'GalleryMapHD.yaml'
+                    ),
+                    'use_sim_time': use_sim_time
+                }]
+                # remappings=[
+                #     ('tf', 'tf'),
+                #     ('tf_static', 'tf_static'),
+                #     ('scan', f'{ns}/scan'),
+                #     ('odom', f'{ns}/odom')
+                # ]
+            )
+
         delayed_movement = TimerAction(
-            period=space + 50.0,
-            actions=[movement]
+            period=space + 80.0,
+            actions=[movement, detection]
         )
 
         ld.add_action(
