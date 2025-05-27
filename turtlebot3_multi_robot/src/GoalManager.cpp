@@ -26,6 +26,7 @@ GoalManager::GoalManager()
           res->success = true;
           res->message = "Robot marked as idle.";
           RCLCPP_INFO(this->get_logger(), "[Manager] %s is now idle", req->robot_namespace.c_str());
+          update();  // Try to assign a goal immediately now that a robot is idle
         });
       
     exec_goals_client_["tb1"] = this->create_client<issy::srv::ExecuteGoals>("/tb1/execute_goals");
@@ -76,52 +77,52 @@ goal_pose.pose.position.x, goal_pose.pose.position.y);
 }
 
 void GoalManager::update() {
-
   for (const auto& [ns, busy] : robot_busy_) {
     RCLCPP_INFO(this->get_logger(), "[Manager] Robot '%s' busy state: %s", ns.c_str(), busy ? "true" : "false");
-}
+  }
 
-    if (!has_global_goals()) return;
-  
+  while (has_global_goals()) {
     const auto& next_goal = global_goal_queue_.front();
-  
-    // Construct the goal execution request using the front of the queue
     auto request = std::make_shared<issy::srv::ExecuteGoals::Request>();
     request->x = next_goal.pose.position.x;
     request->y = next_goal.pose.position.y;
-  
+
     bool goal_dispatched = false;
-  
+
     for (auto& [ns, client] : exec_goals_client_) {
-        if (robot_busy_[ns]) continue;
-      
-        if (!client->wait_for_service(500ms)) {
-          RCLCPP_WARN(this->get_logger(), "[Manager] [%s] execute_goals service not available", ns.c_str());
-          continue;
-        }
-      
-        client->async_send_request(request,
-          [this, ns](rclcpp::Client<issy::srv::ExecuteGoals>::SharedFuture future) {
-            auto response = future.get();
-            if (response->success) {
-              RCLCPP_INFO(this->get_logger(), "[Manager] [%s] %s", ns.c_str(), response->message.c_str());
-              global_goal_queue_.pop();
-              robot_busy_[ns] = true;  // mark as busy
-            } else {
-              RCLCPP_INFO(this->get_logger(), "[Manager] [%s] Goal execution declined.", ns.c_str());
-            }
-          });
-      
-        goal_dispatched = true;
-        break;  // Only assign one per cycle
+      if (robot_busy_[ns]) continue;
+
+      if (!client->wait_for_service(500ms)) {
+        RCLCPP_WARN(this->get_logger(), "[Manager] [%s] execute_goals service not available", ns.c_str());
+        continue;
       }
-      
-  
-    if (!goal_dispatched) {
-      RCLCPP_WARN(this->get_logger(), "[Manager] No available robots to execute goals.");
+
+      // Make a copy of the goal to be used in lambda
+      auto goal_to_send = request;
+
+      // Mark the robot as busy NOW (before dispatch) to avoid reassignment
+      robot_busy_[ns] = true;
+      global_goal_queue_.pop();  // safe now: this robot will take it
+      goal_dispatched = true;
+
+      client->async_send_request(goal_to_send,
+        [this, ns](rclcpp::Client<issy::srv::ExecuteGoals>::SharedFuture future) {
+          auto response = future.get();
+          if (response->success) {
+            RCLCPP_INFO(this->get_logger(), "[Manager] [%s] %s", ns.c_str(), response->message.c_str());
+          } else {
+            RCLCPP_WARN(this->get_logger(), "[Manager] [%s] Goal execution failed.", ns.c_str());
+            // mark back to idle if it failed, optionally requeue goal
+            robot_busy_[ns] = false;
+          }
+        });
+
+      break;  // assigned one robot
     }
+
+    if (!goal_dispatched) break;  // no robots available, exit
   }
-  
+}
 
 bool GoalManager::has_global_goals() const {
 return !global_goal_queue_.empty();
