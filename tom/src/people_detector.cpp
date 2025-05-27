@@ -11,38 +11,38 @@ PeopleDetector::PeopleDetector() : Node("people_detector"), hog_() {
     // === Webcam initialization (commented out for TurtleBot3 camera usage) ===
     /////WEB1START
     
-    webcam_.open("/dev/video0", cv::CAP_V4L2);  // Use V4L2 explicitly
-    if (!webcam_.isOpened()) {
-        RCLCPP_ERROR(this->get_logger(), "Unable to open webcam");
-    }
+    // webcam_.open("/dev/video0", cv::CAP_V4L2);  // Use V4L2 explicitly
+    // if (!webcam_.isOpened()) {
+    //     RCLCPP_ERROR(this->get_logger(), "Unable to open webcam");
+    // }
 
-    int backend = webcam_.get(cv::CAP_PROP_BACKEND);
-    RCLCPP_INFO(this->get_logger(), "OpenCV Video Capture Backend: %d", backend);
+    // int backend = webcam_.get(cv::CAP_PROP_BACKEND);
+    // RCLCPP_INFO(this->get_logger(), "OpenCV Video Capture Backend: %d", backend);
 
-    if (backend == cv::CAP_V4L2) {
-        RCLCPP_INFO(this->get_logger(), "Using V4L2 backend for video capture");
-    } else {
-        RCLCPP_WARN(this->get_logger(), "Not using V4L2 backend, it might cause issues");
-    }
+    // if (backend == cv::CAP_V4L2) {
+    //     RCLCPP_INFO(this->get_logger(), "Using V4L2 backend for video capture");
+    // } else {
+    //     RCLCPP_WARN(this->get_logger(), "Not using V4L2 backend, it might cause issues");
+    // }
     
     /////WEB1END/ROB1START
-    /*
+
     // Subscribe to TurtleBot3 camera image topic
     
-    // image_subscriber_ = this->create_subscription<sensor_msgs::msg::Image>(
-    //     "/camera/image_raw/compressed", 10,
-    //     std::bind(&PeopleDetector::imageCallback, this, std::placeholders::_1)    
-    // );
+    image_subscriber_ = this->create_subscription<sensor_msgs::msg::Image>(
+        "/camera/image_raw/compressed", 10,
+        std::bind(&PeopleDetector::imageCallback, this, std::placeholders::_1)    
+    );
 
-    image_transport::ImageTransport it(std::enable_shared_from_this<PeopleDetector>::shared_from_this());
-    image_subscriber_ = it.subscribe(
-    "/camera/image_raw",
-    10,
-    std::bind(&PeopleDetector::imageCallback, std::enable_shared_from_this<PeopleDetector>::shared_from_this(), std::placeholders::_1),
-    image_transport::TransportHints(this, "image_transport", "compressed")
-);
+    // image_transport::ImageTransport it(std::enable_shared_from_this<PeopleDetector>::shared_from_this());
+    // image_subscriber_ = it.subscribe(
+    // "/camera/image_raw",
+    // 10,
+    // std::bind(&PeopleDetector::imageCallback, std::enable_shared_from_this<PeopleDetector>::shared_from_this(), std::placeholders::_1),
+    // image_transport::TransportHints(this, "image_transport", "compressed")
+    //);
 
-*/
+
 
     //////ROB1END
 
@@ -58,10 +58,12 @@ PeopleDetector::PeopleDetector() : Node("people_detector"), hog_() {
 }
 
 ////ROB2START
-/*
+
 void PeopleDetector::imageCallback(const sensor_msgs::msg::Image::SharedPtr msg) {
+    RCLCPP_INFO(this->get_logger(), "Received image");
     cv::Mat image;
     try {
+        //image = cv_bridge::toCvCopy(msg, "rgb8")->image;
         image = cv_bridge::toCvCopy(msg, "bgr8")->image;
     } catch (cv_bridge::Exception& e) {
         RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
@@ -71,40 +73,44 @@ void PeopleDetector::imageCallback(const sensor_msgs::msg::Image::SharedPtr msg)
     processImage(image);
 
     std_msgs::msg::Header header = msg->header;
+    //header.frame_id = msg->header.frame_id;
     header.frame_id = "camera_link";  // or "base_link" depending on your TF tree
+    //auto processed_msg = cv_bridge::CvImage(header, "rgb8", image).toImageMsg();
     auto processed_msg = cv_bridge::CvImage(header, "bgr8", image).toImageMsg();
+    RCLCPP_INFO(this->get_logger(), "Publishing processed image");
     image_publisher_->publish(*processed_msg);
 }
-*/
+
 ////WEB2START
 
-// === Webcam capture loop (commented out) ===
-void PeopleDetector::captureAndProcessImage() {
-    RCLCPP_INFO(this->get_logger(), "Capturing webcam frame...");
-    cv::Mat frame;
-    webcam_ >> frame;
+// // === Webcam capture loop (commented out) ===
+// void PeopleDetector::captureAndProcessImage() {
+//     RCLCPP_INFO(this->get_logger(), "Capturing webcam frame...");
+//     cv::Mat frame;
+//     webcam_ >> frame;
 
-    if (frame.empty()) {
-        RCLCPP_WARN(this->get_logger(), "Empty frame captured from webcam");
-        return;
-    }
-    else {
-    RCLCPP_INFO(this->get_logger(), "Frame captured successfully");
-    }
+//     if (frame.empty()) {
+//         RCLCPP_WARN(this->get_logger(), "Empty frame captured from webcam");
+//         return;
+//     }
+//     else {
+//     RCLCPP_INFO(this->get_logger(), "Frame captured successfully");
+//     }
     
-    processImage(frame);
+//     processImage(frame);
 
-    std_msgs::msg::Header header;
-    header.stamp = this->now();
-    auto processed_msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
-    image_publisher_->publish(*processed_msg);
-}
+//     std_msgs::msg::Header header;
+//     header.stamp = this->now();
+//     auto processed_msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
+//     image_publisher_->publish(*processed_msg);
+// }
 
 ////WEB2END
 
 void PeopleDetector::processImage(cv::Mat& image) {
     detected_people_.clear();
     hog_.detectMultiScale(image, detected_people_);
+    RCLCPP_INFO(this->get_logger(), "Image size: %d x %d", image.cols, image.rows);
 
     //draw bounding boxes
     for (const auto& rect : detected_people_) {
@@ -141,30 +147,29 @@ void PeopleDetector::publishMarkers() {
 */
 
 /////ROBO3START
-/*
+
 int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
     rclcpp::spin(std::make_shared<PeopleDetector>());
     rclcpp::shutdown();
     return 0;
 }
-*/
+
 /////ROBO3END/WEB3START
 
-int main(int argc, char* argv[]) {
-    rclcpp::init(argc, argv);
-    auto node = std::make_shared<PeopleDetector>();
+// int main(int argc, char* argv[]) {
+//     rclcpp::init(argc, argv);
+//     auto node = std::make_shared<PeopleDetector>();
 
-    rclcpp::Rate loop_rate(10);
-    while (rclcpp::ok()) {
-        node->captureAndProcessImage();  // This is critical
-        rclcpp::spin_some(node);
-        loop_rate.sleep();
-    }
+//     rclcpp::Rate loop_rate(10);
+//     while (rclcpp::ok()) {
+//         node->captureAndProcessImage();  // This is critical
+//         rclcpp::spin_some(node);
+//         loop_rate.sleep();
+//     }
 
-    rclcpp::shutdown();
-    return 0;
-}
+//     rclcpp::shutdown();
+//     return 0;
+// }
 
 ////WEB3END
-
